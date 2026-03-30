@@ -1,105 +1,118 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CryptoEarn - Ads Task App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sentinel Earn - Pro Ads App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Monetag SDKs -->
+    <script src='//libtl.com/sdk.js' data-zone='10555746' data-sdk='show_10555746'></script>
+    <script src='//libtl.com/sdk.js' data-zone='10555727' data-sdk='show_10555727'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        @keyframes pulse-soft {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        .loading-dots:after {
-            content: '.';
-            animation: dots 1.5s steps(5, end) infinite;
-        }
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60% { content: '...'; }
-        }
+        :root { --main-bg: linear-gradient(135deg, #1e3a8a, #059669); }
+        body { background: var(--main-bg); min-height: 100vh; transition: background 0.3s ease; }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        #task-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: black; }
+        .click-trap { position: absolute; inset: 0; z-index: 110; cursor: pointer; }
+        .cooldown-active { pointer-events: none; opacity: 0.5; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-900 via-blue-700 to-green-600 min-h-screen text-white font-sans">
+<body class="text-white pb-20">
 
-    <!-- Header / Balance Section -->
-    <nav class="p-6 sticky top-0 z-40 bg-blue-900/80 backdrop-blur-md border-b border-white/10">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <h1 class="text-2xl font-bold tracking-tighter italic text-green-400">SENTINEL<span class="text-white">EARN</span></h1>
-            <div class="glass-card px-6 py-2 rounded-full flex items-center gap-3">
-                <i class="fab fa-ethereum text-green-400 text-xl"></i>
-                <div>
-                    <p class="text-xs text-gray-300 leading-none">Total Balance</p>
-                    <p class="text-xl font-mono font-bold" id="balance-display">0.00000</p>
-                </div>
-                <span class="text-xs font-bold text-green-400">USDT</span>
-            </div>
+    <!-- Top Bar -->
+    <nav class="p-4 glass sticky top-0 z-50 flex justify-between items-center">
+        <div class="flex flex-col">
+            <span id="userBar" class="font-bold text-sm">👤 Loading...</span>
+            <span id="ref-count" class="text-[10px] text-green-300">Referrals: 0 (Earn 20%)</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <input type="color" id="themePicker" class="w-8 h-8 rounded-full border-none bg-transparent cursor-pointer">
+            <button onclick="toggleAdmin()" class="text-xs opacity-50"><i class="fas fa-lock"></i></button>
         </div>
     </nav>
 
-    <!-- Main Content -->
-    <main class="max-w-6xl mx-auto p-6">
-        <div class="mb-8">
-            <h2 class="text-3xl font-extrabold">Available Tasks</h2>
-            <p class="text-blue-100">Click a link, reload 4x, and earn rewards every 2 hours.</p>
-        </div>
-
-        <!-- Buttons Grid -->
-        <div id="task-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            <!-- Buttons will be injected here by app.js -->
-        </div>
-    </main>
-
-    <!-- Task Modal Overlay -->
-
-    <div id="task-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white text-gray-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
+    <!-- Balance & Stats -->
+    <div class="p-6">
+        <div class="glass rounded-3xl p-6 text-center shadow-2xl">
+            <p class="text-gray-300 text-sm uppercase tracking-widest">Available Balance</p>
+            <h1 class="text-5xl font-black my-2 font-mono" id="balance-display">0.00000</h1>
+            <p class="text-green-400 font-bold">USDT</p>
             
-            <!-- Task Header -->
-            <div class="bg-gray-100 p-4 flex justify-between items-center border-b">
-                <span class="font-bold text-blue-700"><i class="fas fa-tasks mr-2"></i>Task Progress</span>
-                <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
-            </div>
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <button onclick="openWithdraw()" class="bg-green-600 p-3 rounded-xl font-bold active:scale-95 transition-all">Withdraw</button>
 
-            <!-- Website Preview (Iframe) -->
-            <div class="h-64 bg-gray-200 relative">
-                <iframe id="task-iframe" src="" class="w-full h-full border-none"></iframe>
-                <div id="iframe-loader" class="absolute inset-0 bg-gray-900 flex flex-center items-center justify-center text-white">
-                    <p class="loading-dots">Loading Website</p>
-                </div>
-            </div>
-
-            <!-- Task Controls -->
-            <div class="p-6 space-y-4">
-                <div class="flex justify-between text-sm font-bold">
-                    <span>Reloads Required: <span id="reload-count">0</span> / 4</span>
-                    <span id="cooldown-timer" class="text-red-500 hidden italic">Wait 8s...</span>
-                </div>
-                
-                <!-- Progress Bar -->
-                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                    <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
-                </div>
-
-                <button id="reload-btn" onclick="handleReload()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
-                    <i class="fas fa-sync-alt mr-2"></i> Reload Website
-                </button>
-
-                <button id="claim-btn" onclick="handleClaim()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all hidden scale-105 shadow-lg">
-                    <i class="fas fa-gift mr-2"></i> CLAIM 0.00014 USDT
-                </button>
+                <button onclick="copyRefLink()" class="bg-blue-600 p-3 rounded-xl font-bold active:scale-95 transition-all">Invite Link</button>
             </div>
         </div>
     </div>
 
-    <script src="app.js"></script>
+    <!-- Task Grid -->
+    <div class="px-6 pb-10">
+        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+            <i class="fas fa-bolt text-yellow-400"></i> Daily Tasks
+        </h2>
+        <div id="task-grid" class="grid grid-cols-2 gap-4">
+            <!-- Buttons via app.js -->
+        </div>
+    </div>
+
+    <!-- FULLSCREEN TASK OVERLAY -->
+    <div id="task-overlay">
+        <!-- The Click Trap reloads the site -->
+        <div id="click-trap" class="click-trap" onclick="triggerTaskReload()"></div>
+        <div class="absolute top-0 left-0 right-0 p-4 bg-black/60 z-[120] flex justify-between items-center">
+            <div>
+                <p class="text-xs uppercase">Clicks: <span id="reload-count">0</span>/4</p>
+                <div class="w-32 h-1 bg-gray-700 mt-1"><div id="task-progress" class="h-full bg-green-500 transition-all w-0"></div></div>
+            </div>
+            <p id="cooldown-status" class="text-red-500 font-bold hidden">Wait 8s...</p>
+            <button onclick="closeTask()" class="text-2xl">&times;</button>
+        </div>
+        <iframe id="task-iframe" src="" class="w-full h-full border-none"></iframe>
+        <button id="claim-btn" onclick="claimReward()" class="absolute bottom-10 left-10 right-10 bg-green-600 py-4 rounded-2xl font-bold text-xl hidden z-[130] animate-bounce">CLAIM REWARD</button>
+    </div>
+
+    <!-- WITHDRAWAL MODAL -->
+    <div id="withdraw-modal" class="fixed inset-0 bg-black/80 hidden z-[200] p-6 flex items-center justify-center">
+        <div class="bg-slate-900 w-full rounded-3xl p-6 border border-white/10">
+            <h3 class="text-xl font-bold mb-4">Withdraw USDT</h3>
+            <select id="wd-method" class="w-full bg-slate-800 p-3 rounded-xl mb-4">
+                <option value="GCash">GCash</option>
+                <option value="FaucetPay">FaucetPay</option>
+                <option value="PayPal">PayPal</option>
+            </select>
+            <input type="text" id="wd-address" placeholder="Address/Number" class="w-full bg-slate-800 p-3 rounded-xl mb-4">
+            <input type="number" id="wd-amount" placeholder="Amount" class="w-full bg-slate-800 p-3 rounded-xl mb-4">
+            <button onclick="submitWithdrawal()" class="w-full bg-green-600 py-3 rounded-xl font-bold">Submit Request</button>
+            <button onclick="closeWithdraw()" class="w-full mt-2 text-gray-400">Cancel</button>
+            <div id="wd-history" class="mt-4 text-xs text-gray-400 h-24 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-black hidden z-[300] p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold mb-4">Admin Dashboard</h2>
+        <div id="admin-login">
+            <input type="password" id="admin-pass" placeholder="Password" class="w-full bg-gray-800 p-3 rounded-xl">
+            <button onclick="loginAdmin()" class="w-full mt-2 bg-blue-600 p-3 rounded-xl">Login</button>
+        </div>
+        <div id="admin-content" class="hidden space-y-6">
+            <div class="glass p-4 rounded-xl">
+                <h3 class="font-bold">Add New Link</h3>
+                <input type="text" id="new-link" placeholder="https://..." class="w-full bg-gray-800 p-2 rounded mt-2">
+                <button onclick="saveLink()" class="w-full bg-green-600 mt-2 p-2 rounded">Register Link</button>
+            </div>
+            <div id="pending-withdrawals" class="space-y-2 text-sm">
+                <h3 class="font-bold">Pending Approvals</h3>
+                <!-- List from DB -->
+            </div>
+            <button onclick="toggleAdmin()" class="bg-red-900 p-2 rounded">Close</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module" src="app.js"></script>
 </body>
 </html>
