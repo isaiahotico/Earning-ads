@@ -6,135 +6,133 @@
     <title>Sentinel Earn - Pro Ads App</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Monetag SDKs -->
     <script src='//libtl.com/sdk.js' data-zone='10555746' data-sdk='show_10555746'></script>
     <script src='//libtl.com/sdk.js' data-zone='10555727' data-sdk='show_10555727'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --main-bg: linear-gradient(135deg, #1e3a8a, #059669); }
-        body { background: var(--main-bg); min-height: 100vh; overflow-x: hidden; color: white; }
-        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        :root { --main-bg: linear-gradient(135deg, #0f172a, #065f46); }
+        body { background: var(--main-bg); min-height: 100vh; color: white; transition: background 0.3s; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
         #task-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: black; }
-        /* This layer captures the click to reload the website */
-        .click-layer { position: absolute; inset: 0; z-index: 110; background: transparent; cursor: pointer; }
-        .cooldown-active { pointer-events: none; }
-        .locked-btn { filter: grayscale(1); opacity: 0.6; pointer-events: none; }
+        
+        /* The Click Wrapper for Manual Reload */
+        .click-wrapper { position: absolute; inset: 0; z-index: 110; cursor: pointer; }
+        .cooldown-active { pointer-events: none; opacity: 0.5; }
+        
+        .locked-card { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
+        iframe { pointer-events: none; } /* Ensures clicks hit the wrapper div */
     </style>
 </head>
-<body>
+<body class="font-sans overflow-x-hidden">
 
-    <!-- Top Bar -->
-    <nav class="p-4 glass sticky top-0 z-50 flex justify-between items-center">
+    <!-- Top Navigation -->
+    <nav class="p-4 glass sticky top-0 z-50 flex justify-between items-center border-b border-white/5">
         <div class="flex flex-col">
-            <span id="userBar" class="font-bold text-sm">👤 Loading...</span>
-            <span id="ref-count" class="text-[10px] text-green-300">Referrals: 0 (20% Commission)</span>
+            <span id="userBar" class="font-bold text-sm text-green-400">👤 Guest</span>
+            <span id="ref-status" class="text-[10px] text-gray-400">Referrals: 0</span>
         </div>
         <div class="flex items-center gap-3">
-            <input type="color" id="themePicker" title="Change Background" class="w-8 h-8 rounded-full border-none bg-transparent cursor-pointer">
-            <button onclick="openAdmin()" class="text-xs opacity-50"><i class="fas fa-user-shield"></i></button>
+            <input type="color" id="themePicker" class="w-8 h-8 rounded-full border-none bg-transparent cursor-pointer">
+            <button onclick="openAdmin()" class="text-gray-500 hover:text-white"><i class="fas fa-shield-alt"></i></button>
         </div>
     </nav>
 
-    <!-- Balance Dashboard -->
-    <div class="p-6">
-        <div class="glass rounded-3xl p-8 text-center shadow-2xl border border-white/20">
-            <p class="text-blue-200 text-xs uppercase font-bold mb-1">Total Earnings</p>
-            <h1 class="text-5xl font-black font-mono mb-4" id="balance-display">0.00000</h1>
-            <div class="flex gap-2 justify-center">
-
-                <button onclick="openWithdraw()" class="bg-green-500 px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-green-900/40">Withdraw</button>
-                <button onclick="copyRefLink()" class="bg-blue-500 px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-blue-900/40">Invite</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Task List -->
-    <div class="px-6 pb-24">
-        <h2 class="text-lg font-bold mb-4 opacity-80">Available Tasks (2h Cooldown)</h2>
-        <div id="task-grid" class="grid grid-cols-2 gap-4">
-            <!-- Dynamic Task Buttons -->
-        </div>
-    </div>
-
-    <!-- FULLSCREEN TASK OVERLAY -->
-    <div id="task-overlay">
-        <!-- Interactive Layer (User clicks here to reload) -->
-        <div id="click-layer" class="click-layer" onclick="handleManualReload()"></div>
-        
-        <div class="absolute top-0 left-0 right-0 p-4 bg-black/80 z-[120] border-b border-white/10">
-            <div class="flex justify-between items-center mb-2">
-                <span class="text-xs font-bold text-blue-400">Task Progress</span>
-                <button onclick="closeTask()" class="text-2xl text-red-500">&times;</button>
-            </div>
-            <!-- Instruction -->
-            <p id="instruction-text" class="text-center text-sm font-bold text-yellow-400 mb-2">TAP ANYWHERE ON THE WEBSITE TO RELOAD (4X)</p>
+    <!-- Main Dashboard -->
+    <main class="p-6 max-w-lg mx-auto">
+        <div class="glass rounded-[2rem] p-8 text-center shadow-2xl border border-white/10 mb-8">
+            <p class="text-xs uppercase tracking-tighter text-gray-400 mb-2">Total Balance</p>            <h1 class="text-5xl font-black font-mono tracking-tighter" id="balance-display">0.00000</h1>
+            <p class="text-green-500 font-bold text-sm mb-6">USDT</p>
             
-            <div class="flex items-center gap-4">
-                <div class="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
-                    <div id="task-progress" class="h-full bg-green-500 transition-all duration-500 w-0"></div>
-                </div>
-                <span id="reload-counter" class="text-xs font-mono">0/4</span>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="openWithdraw()" class="bg-green-600 hover:bg-green-700 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-green-900/20">Withdraw</button>
+                <button onclick="copyRef()" class="bg-blue-600 hover:bg-blue-700 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20">Invite</button>
             </div>
-            <p id="cooldown-timer" class="text-center text-red-500 font-bold mt-2 hidden">COOLDOWN: 8s</p>
         </div>
 
-        <!-- Gift Task Button (Right side) -->
-        <div class="absolute right-4 bottom-24 z-[130]">
-            <button id="gift-btn" onclick="handleGiftTask()" class="w-16 h-16 bg-yellow-500 rounded-full shadow-2xl flex items-center justify-center animate-bounce border-4 border-white">
-                <i class="fas fa-gift text-2xl text-red-600"></i>
-            </button>
-            <p id="gift-count" class="text-[10px] text-center mt-1 bg-black/50 rounded">Gifts: 0/4</p>
+        <h2 class="text-xl font-bold mb-4 px-2">Earning Tasks</h2>
+        <div id="task-grid" class="grid grid-cols-2 gap-4">
+            <!-- Tasks rendered by JS -->
         </div>
+    </main>
 
-        <iframe id="task-iframe" src="" class="w-full h-full border-none pointer-events-none"></iframe>
+    <!-- TASK FULLSCREEN MODAL -->
+    <div id="task-overlay">
+        <!-- Manual Reload Wrapper -->
+        <div class="click-wrapper" id="reload-wrapper" onclick="handleManualReload()"></div>
         
-        <!-- Final Claim Button -->
-        <button id="claim-btn" onclick="claimFinalReward()" class="absolute bottom-8 left-8 right-8 bg-green-600 py-4 rounded-2xl font-bold text-xl hidden z-[140] shadow-2xl">
+        <!-- Task Info Bar -->
+        <div class="absolute top-0 inset-x-0 p-4 bg-black/80 z-[120] border-b border-white/10">
+            <div class="flex justify-between items-center mb-3">
+                <span id="reload-stat" class="text-xs font-bold">RELOADS: 0/4</span>
+                <button onclick="closeTask()" class="text-2xl text-red-500 font-bold">&times;</button>
+            </div>
+            <div class="w-full h-1 bg-gray-800 rounded-full">
+                <div id="task-progress" class="h-full bg-blue-500 transition-all duration-500 w-0"></div>
+            </div>
+            <p id="cooldown-msg" class="text-center text-xs text-yellow-500 font-bold mt-2 hidden">COOLDOWN: 8s (Tap Website to reload)</p>
+        </div>
+
+        <!-- Gift Task Button -->
+        <div class="absolute right-6 bottom-32 z-[130] text-center">
+            <button id="gift-btn" onclick="handleGiftClick()" class="w-16 h-16 bg-gradient-to-t from-red-600 to-yellow-500 rounded-full shadow-2xl flex items-center justify-center border-4 border-white animate-pulse">
+                <i class="fas fa-gift text-2xl text-white"></i>
+            </button>            <p id="gift-stat" class="text-[10px] mt-2 font-bold text-white bg-black/40 px-2 py-1 rounded-full">Gifts: 0/4</p>
+        </div>
+
+        <iframe id="task-iframe" src="" class="w-full h-full border-none"></iframe>
+
+        <button id="claim-final-btn" onclick="finishTask()" class="absolute bottom-10 inset-x-10 bg-green-600 py-5 rounded-3xl font-black text-xl shadow-2xl hidden z-[140]">
             CLAIM 0.00014 USDT
         </button>
     </div>
 
-    <!-- ADMIN PANEL -->
-    <div id="admin-modal" class="fixed inset-0 bg-slate-950 hidden z-[300] p-6 overflow-y-auto">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-2xl font-bold">Admin Portal</h2>
-            <button onclick="closeAdmin()" class="text-3xl">&times;</button>
-        </div>
-        
-        <div id="admin-auth" class="space-y-4">
-            <input type="password" id="admin-pass" placeholder="Enter Admin Password" class="w-full bg-slate-900 border border-white/10 p-4 rounded-xl">
-            <button onclick="verifyAdmin()" class="w-full bg-blue-600 py-3 rounded-xl font-bold">Access Database</button>
-        </div>
-
-        <div id="admin-dashboard" class="hidden space-y-6">
-            <div class="glass p-4 rounded-xl">
-                <h3 class="font-bold mb-2">Add New Ads Link</h3>
-
-<input type="text" id="new-link-input" placeholder="https://blogspot-link..." class="w-full bg-slate-900 p-3 rounded-lg border border-white/10 mb-2">
-                <button onclick="registerNewLink()" class="w-full bg-green-600 py-2 rounded-lg font-bold text-sm">Register to Database</button>
-            </div>
+    <!-- WITHDRAW MODAL -->
+    <div id="withdraw-modal" class="fixed inset-0 bg-black/95 hidden z-[200] p-6 flex items-center justify-center">
+        <div class="glass w-full max-w-sm rounded-[2.5rem] p-8 border border-white/20">
+            <h3 class="text-2xl font-bold mb-2">Withdraw</h3>
+            <p class="text-xs text-gray-400 mb-6">Minimum: 0.02 USDT</p>
             
-            <div>
-                <h3 class="font-bold mb-4 text-yellow-500">Pending Withdrawals</h3>
-                <div id="withdrawal-list" class="space-y-3">
-                    <!-- Loaded from Firebase -->
-                </div>
-            </div>
+            <select id="wd-method" class="w-full bg-white/10 p-4 rounded-2xl mb-4 border border-white/10">
+                <option value="GCash">GCash</option>
+                <option value="PayPal">PayPal</option>
+                <option value="FaucetPay">FaucetPay (USDT)</option>
+            </select>
+            <input type="text" id="wd-address" placeholder="Number / Email / Wallet" class="w-full bg-white/10 p-4 rounded-2xl mb-4 border border-white/10">
+            <input type="number" id="wd-amount" placeholder="Amount (USDT)" class="w-full bg-white/10 p-4 rounded-2xl mb-6 border border-white/10"><button onclick="requestWithdraw()" class="w-full bg-green-600 py-4 rounded-2xl font-bold">Submit Request</button>
+            <button onclick="closeWithdraw()" class="w-full mt-4 text-sm text-gray-500">Cancel</button>
         </div>
     </div>
 
-    <!-- WITHDRAWAL MODAL -->
-    <div id="withdraw-modal" class="fixed inset-0 bg-black/90 hidden z-[200] p-6 flex items-center justify-center">
-        <div class="glass w-full max-w-md rounded-3xl p-6 border border-white/20">
-            <h3 class="text-xl font-bold mb-4">Redeem USDT</h3>
-            <select id="wd-method" class="w-full bg-slate-900 p-3 rounded-xl border border-white/10 mb-4">
-                <option value="GCash">GCash</option>
-                <option value="FaucetPay">FaucetPay (USDT)</option>
-                <option value="PayPal">PayPal</option>
-            </select>
-            <input type="text" id="wd-address" placeholder="GCash Number / Email / Address" class="w-full bg-slate-900 p-3 rounded-xl border border-white/10 mb-4">
-            <input type="number" id="wd-amount" placeholder="Min 0.01 USDT" class="w-full bg-slate-900 p-3 rounded-xl border border-white/10 mb-6">
-            <button onclick="processWithdrawRequest()" class="w-full bg-green-600 py-4 rounded-xl font-bold">Request Withdrawal</button>
-            <button onclick="closeWithdraw()" class="w-full mt-4 text-gray-400 text-sm">Return to Dashboard</button>
+    <!-- ADMIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950 hidden z-[300] overflow-y-auto p-6">
+        <div class="max-w-xl mx-auto">
+            <div class="flex justify-between items-center mb-8">
+                <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+                <button onclick="closeAdmin()" class="text-3xl">&times;</button>
+            </div>
+
+            <div id="admin-login" class="space-y-4">
+                <input type="password" id="admin-pass" placeholder="Admin PIN" class="w-full bg-slate-900 p-4 rounded-xl border border-white/10">
+                <button onclick="tryAdminLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold">Unlock Access</button>
+            </div>
+
+            <div id="admin-panel" class="hidden space-y-8">
+                <!-- Add Link -->
+                <div class="glass p-6 rounded-2xl">
+                    <h3 class="font-bold mb-4">Register New Task Link</h3>
+                    <input type="text" id="admin-new-link" class="w-full bg-black p-3 rounded-lg mb-2 text-sm border border-white/10">
+                    <button onclick="adminAddLink()" class="w-full bg-blue-600 py-2 rounded-lg text-sm font-bold">Save Link</button>
+                </div>
+
+                <!-- Withdrawal List -->
+                <div>
+                    <h3 class="font-bold text-yellow-500 mb-4">Pending Approval Queue</h3>
+                    <div id="admin-wd-list" class="space-y-4">
+                        <!-- Items via JS -->
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
