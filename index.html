@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CryptoEarn - Ads Task App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .loading-dots:after {
+            content: '.';
+            animation: dots 1.5s steps(5, end) infinite;
+        }
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-900 via-blue-700 to-green-600 min-h-screen text-white font-sans">
+
+    <!-- Header / Balance Section -->
+    <nav class="p-6 sticky top-0 z-40 bg-blue-900/80 backdrop-blur-md border-b border-white/10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-tighter italic text-green-400">SENTINEL<span class="text-white">EARN</span></h1>
+            <div class="glass-card px-6 py-2 rounded-full flex items-center gap-3">
+                <i class="fab fa-ethereum text-green-400 text-xl"></i>
+                <div>
+                    <p class="text-xs text-gray-300 leading-none">Total Balance</p>
+                    <p class="text-xl font-mono font-bold" id="balance-display">0.00000</p>
+                </div>
+                <span class="text-xs font-bold text-green-400">USDT</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto p-6">
+        <div class="mb-8">
+            <h2 class="text-3xl font-extrabold">Available Tasks</h2>
+            <p class="text-blue-100">Click a link, reload 4x, and earn rewards every 2 hours.</p>
+        </div>
+
+        <!-- Buttons Grid -->
+        <div id="task-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <!-- Buttons will be injected here by app.js -->
+        </div>
+    </main>
+
+    <!-- Task Modal Overlay -->
+
+    <div id="task-modal" class="fixed inset-0 bg-black/90 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white text-gray-900 w-full max-w-lg rounded-2xl overflow-hidden shadow-2xl relative">
+            
+            <!-- Task Header -->
+            <div class="bg-gray-100 p-4 flex justify-between items-center border-b">
+                <span class="font-bold text-blue-700"><i class="fas fa-tasks mr-2"></i>Task Progress</span>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+            </div>
+
+            <!-- Website Preview (Iframe) -->
+            <div class="h-64 bg-gray-200 relative">
+                <iframe id="task-iframe" src="" class="w-full h-full border-none"></iframe>
+                <div id="iframe-loader" class="absolute inset-0 bg-gray-900 flex flex-center items-center justify-center text-white">
+                    <p class="loading-dots">Loading Website</p>
+                </div>
+            </div>
+
+            <!-- Task Controls -->
+            <div class="p-6 space-y-4">
+                <div class="flex justify-between text-sm font-bold">
+                    <span>Reloads Required: <span id="reload-count">0</span> / 4</span>
+                    <span id="cooldown-timer" class="text-red-500 hidden italic">Wait 8s...</span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                    <div id="progress-bar" class="bg-green-500 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+
+                <button id="reload-btn" onclick="handleReload()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-sync-alt mr-2"></i> Reload Website
+                </button>
+
+                <button id="claim-btn" onclick="handleClaim()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition-all hidden scale-105 shadow-lg">
+                    <i class="fas fa-gift mr-2"></i> CLAIM 0.00014 USDT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
