@@ -11,21 +11,20 @@
     <script src='//libtl.com/sdk.js' data-zone='10555727' data-sdk='show_10555727'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --accent: #00f2ff; --bg: #0a0f18; }
-        body { background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        :root { --accent: #00f2ff; }
+        body { background-color: #0a0f18; color: white; font-family: 'Inter', sans-serif; transition: background 0.3s; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .nav-btn.active { color: var(--accent); border-top: 2px solid var(--accent); }
         
-        /* Task System */
+        /* Task Overlay Logic */
         #task-overlay { display: none; position: fixed; inset: 0; z-index: 1000; background: #000; }
         .click-detector { position: absolute; inset: 0; z-index: 1100; cursor: pointer; background: rgba(0,0,0,0.01); }
         .cooldown-state { pointer-events: none; opacity: 0.4; }
         iframe { width: 100%; height: 100%; border: none; }
         
-        /* Animations */
-        .glow-text { text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); }
+        .hide { display: none !important; }
     </style>
 </head>
 <body class="pb-24">
@@ -34,121 +33,119 @@
     <header class="p-4 flex justify-between items-center glass sticky top-0 z-50">
         <div>
             <h1 id="userLabel" class="text-xs font-bold text-cyan-400">👤 Loading...</h1>
-            <p id="headerBalance" class="text-lg font-black glow-text">0.00000 <span class="text-[10px] text-gray-400">USDT</span></p>
+            <p id="headerBalance" class="text-lg font-black">0.00000 <span class="text-[10px] text-gray-400">USDT</span></p>
         </div>
         <div class="flex gap-3 items-center">
-            <input type="color" id="colorPicker" class="w-6 h-6 rounded-full border-none bg-transparent">
-            <button onclick="toggleAdmin()" class="text-gray-500"><i class="fas fa-user-shield"></i></button>
+            <input type="color" id="themePicker" class="w-6 h-6 rounded-full border-none bg-transparent cursor-pointer" title="Change Background">
+            <button onclick="openAdmin()" class="text-gray-500"><i class="fas fa-user-shield"></i></button>
         </div>
     </header>
 
     <!-- Main Tabs -->
     <div id="tab-tasks" class="tab-content active p-4">
-        <!-- Referral Summary Card -->        <div class="glass rounded-3xl p-5 mb-6 border-cyan-900/30">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Referral Dashboard</h2>
-                <button onclick="copyRef()" class="text-[10px] bg-cyan-600 px-3 py-1 rounded-full font-bold">COPY LINK</button>
+        <!-- Referral Summary -->
+        <div class="glass rounded-3xl p-5 mb-6 border-cyan-900/30">            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xs font-bold text-gray-400 uppercase">Referral Stats (20% Comm)</h2>
+                <button onclick="copyRef()" class="text-[10px] bg-cyan-600 px-3 py-1 rounded-full font-bold">INVITE</button>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-black/40 p-3 rounded-2xl border border-white/5">
-                    <p class="text-[10px] text-gray-500">Total Referrals</p>
-                    <p id="refCount" class="text-xl font-bold">0</p>
+                    <p class="text-[10px] text-gray-500 text-center">Referrals: <span id="refCount" class="text-white font-bold">0</span></p>
                 </div>
                 <div class="bg-black/40 p-3 rounded-2xl border border-white/5">
-                    <p class="text-[10px] text-gray-500">Total Earned</p>
-                    <p id="refEarnings" class="text-xl font-bold text-green-400">0.00000</p>
+                    <p class="text-[10px] text-gray-500 text-center">Earned: <span id="refEarnings" class="text-green-400 font-bold">0.000</span></p>
                 </div>
             </div>
         </div>
 
-        <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-yellow-400"></i> Earn USDT</h3>
+        <h3 class="font-bold mb-4 flex items-center gap-2"><i class="fas fa-bolt text-yellow-400"></i> Task Board</h3>
         <div id="taskGrid" class="grid grid-cols-2 gap-3">
-            <!-- Buttons via JS -->
+            <!-- Tasks Rendered via JS -->
         </div>
     </div>
 
+    <!-- Leaderboard -->
     <div id="tab-leaderboard" class="tab-content p-4">
-        <h2 class="text-xl font-black mb-6 glow-text">Top 100 Earners</h2>
+        <h2 class="text-xl font-black mb-6 text-cyan-400">Top 100 Earners</h2>
         <div id="leaderList" class="space-y-2"></div>
     </div>
 
+    <!-- Chat -->
     <div id="tab-chat" class="tab-content p-4">
-        <h2 class="text-xl font-black mb-4">Global Chat</h2>
+        <h2 class="text-xl font-black mb-4 text-cyan-400">Community Chat</h2>
         <div id="chatBox" class="glass h-[60vh] rounded-2xl p-4 overflow-y-auto mb-4 space-y-3 text-sm"></div>
         <div class="flex gap-2">
-            <input type="text" id="chatInput" placeholder="Write a message..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 outline-none">
-            <button onclick="sendMsg()" class="bg-cyan-600 w-12 h-12 rounded-xl"><i class="fas fa-paper-plane"></i></button>
+            <input type="text" id="chatInput" placeholder="Message..." class="flex-1 bg-white/5 border border-white/10 rounded-xl px-4">
+            <button onclick="sendChat()" class="bg-cyan-600 w-12 h-12 rounded-xl"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <!-- Bottom Nav -->
+    <!-- Bottom Navigation -->
     <nav class="fixed bottom-0 inset-x-0 glass flex justify-around p-4 z-[100] border-t border-white/10">        <button onclick="switchTab('tasks')" class="nav-btn active flex flex-col items-center gap-1" id="nav-tasks"><i class="fas fa-home"></i><span class="text-[10px]">Home</span></button>
         <button onclick="switchTab('leaderboard')" class="nav-btn flex flex-col items-center gap-1" id="nav-leaderboard"><i class="fas fa-trophy"></i><span class="text-[10px]">Top 100</span></button>
         <button onclick="switchTab('chat')" class="nav-btn flex flex-col items-center gap-1" id="nav-chat"><i class="fas fa-comments"></i><span class="text-[10px]">Chat</span></button>
-        <button onclick="openWD()" class="nav-btn flex flex-col items-center gap-1"><i class="fas fa-wallet"></i><span class="text-[10px]">Wallet</span></button>
+        <button onclick="openWD()" class="nav-btn flex flex-col items-center gap-1"><i class="fas fa-wallet"></i><span class="text-[10px]">Withdraw</span></button>
     </nav>
 
     <!-- TASK OVERLAY SYSTEM -->
     <div id="task-overlay">
-        <!-- Click Detector - disappear after 4 clicks -->
+        <!-- Overlay detects 4 clicks then disappears to let user click ads -->
         <div id="clickVerifier" class="click-detector" onclick="verifyClick()"></div>
         
-        <div class="absolute top-0 inset-x-0 glass p-5 z-[1200] border-b border-white/10">
+        <div class="absolute top-0 inset-x-0 glass p-5 z-[1200] border-b border-white/10 text-center">
             <div class="flex justify-between items-center mb-3">
-                <span id="clickStat" class="text-xs font-black text-cyan-400">TAP WEBSITE TO CONFIRM: 0/4</span>
+                <span id="clickStat" class="text-xs font-black text-cyan-400 tracking-widest">TAP WEBSITE TO RELOAD: 0/4</span>
                 <button onclick="closeTask()" class="text-2xl text-red-500">&times;</button>
             </div>
             <div class="w-full bg-gray-800 h-1 rounded-full"><div id="taskBar" class="h-full bg-cyan-500 w-0 transition-all duration-500"></div></div>
-            <p id="waitMsg" class="text-center text-[10px] font-bold text-yellow-500 mt-2 hidden">WAIT 8 SECONDS...</p>
+            <p id="waitMsg" class="text-[10px] font-bold text-yellow-500 mt-2 hide">WAIT 8s FOR COOLDOWN</p>
         </div>
 
-        <div class="absolute right-6 bottom-40 z-[1300]">
-            <button id="giftBtn" onclick="doGift()" class="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-600 rounded-full shadow-2xl border-2 border-white animate-bounce flex items-center justify-center">
-                <i class="fas fa-gift text-2xl text-white"></i>
+        <!-- Gift Task -->
+        <div class="absolute right-6 bottom-40 z-[1300] text-center">
+            <button id="giftBtn" onclick="handleGift()" class="w-14 h-14 bg-gradient-to-br from-yellow-400 to-red-600 rounded-full shadow-2xl border-2 border-white animate-bounce flex items-center justify-center">
+                <i class="fas fa-gift text-white"></i>
             </button>
-            <p id="giftStat" class="text-[10px] text-center mt-2 bg-black/50 p-1 rounded">Gifts: 0/4</p>
+            <p id="giftStat" class="text-[9px] mt-1 bg-black/40 px-2 rounded-full">0/4 Gifts</p>
         </div>
 
         <iframe id="taskIframe"></iframe>
         
-        <div id="claimArea" class="absolute bottom-10 inset-x-10 hidden z-[1400]">
-            <p class="text-center text-[10px] text-gray-400 mb-2">Website verified! Click any ad then claim.</p>
+        <!-- Claim Area (Visible after verification) -->
+        <div id="claimArea" class="absolute bottom-10 inset-x-10 hide z-[1400]">
+            <p class="text-center text-[10px] text-gray-400 mb-2 italic">Website verified! Click any ad then claim reward.</p>
             <button onclick="claimReward()" class="w-full bg-green-600 py-4 rounded-2xl font-black text-xl shadow-2xl">CLAIM 0.00014 USDT</button>
         </div>
     </div>
 
-    <!-- WITHDRAWAL MODAL -->
-    <div id="wd-modal" class="fixed inset-0 bg-black/90 hidden z-[2000] p-6 flex items-center justify-center">
-        <div class="glass w-full max-w-sm rounded-[2rem] p-8 border border-white/10">
-            <h2 class="text-2xl font-black mb-2">Withdraw</h2>
-            <p class="text-xs text-gray-500 mb-6">Min. withdrawal: 0.02 USDT</p>
-            
-            <label class="text-[10px] text-cyan-400 block mb-1">Select Method</label>
-            <select id="wdMethod" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/10">
-                <option value="GCash">GCash</option>
-                <option value="PayPal">PayPal</option>
-                <option value="FaucetPay">FaucetPay</option>
-            </select>
-            
-            <input type="text" id="wdAddr" placeholder="Phone Number / Email" class="w-full bg-white/5 p-4 rounded-xl mb-4 outline-none border border-white/10">
-            <input type="number" id="wdAmt" placeholder="Amount (USDT)" class="w-full bg-white/5 p-4 rounded-xl mb-6 outline-none border border-white/10">
-            
-            <button onclick="submitWD()" class="w-full bg-cyan-600 py-4 rounded-xl font-bold active:scale-95 transition-all">Submit Request</button>
-            <button onclick="closeWD()" class="w-full mt-4 text-gray-500 text-sm">Close</button>
+    <!-- MODALS -->
+    <div id="wd-modal" class="fixed inset-0 bg-black/95 hide z-[2000] p-6 flex items-center justify-center">
+        <div class="glass w-full max-w-sm rounded-3xl p-8 border border-white/10">
+            <h2 class="text-2xl font-black mb-1">Withdraw</h2>
+            <p class="text-xs text-gray-500 mb-6">Minimum: 0.02 USDT</p>
+            <select id="wdMethod" class="w-full bg-white/5 p-4 rounded-xl mb-4 border border-white/10"><option>GCash</option><option>PayPal</option><option>FaucetPay</option></select>
+            <input type="text" id="wdAddr" placeholder="Address / Email / Number" class="w-full bg-white/5 p-4 rounded-xl mb-4 border border-white/10 outline-none">
+            <input type="number" id="wdAmt" placeholder="Amount (USDT)" class="w-full bg-white/5 p-4 rounded-xl mb-6 border border-white/10 outline-none">
+            <button onclick="submitWD()" class="w-full bg-cyan-600 py-4 rounded-xl font-bold">Request Withdrawal</button>
+            <button onclick="closeWD()" class="w-full mt-4 text-gray-500 text-sm">Cancel</button>
         </div>
     </div>
 
-    <!-- ADMIN -->
-    <div id="admin-modal" class="fixed inset-0 bg-slate-950 hidden z-[3000] p-6 overflow-y-auto">
-        <div id="adminLogin">
-            <h2 class="text-xl font-bold mb-4">Admin Access</h2>
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950 hide z-[3000] p-6 overflow-y-auto">
+        <div id="adminAuth">
+            <h2 class="text-xl font-bold mb-4">Admin Security</h2>
             <input type="password" id="adminPin" placeholder="Enter PIN" class="w-full bg-white/5 p-4 rounded-xl mb-4">
-            <button onclick="checkAdmin()" class="w-full bg-blue-600 py-3 rounded-xl">Login</button>
+            <button onclick="authAdmin()" class="w-full bg-blue-600 py-3 rounded-xl">Unlock</button>
         </div>
-        <div id="adminPanel" class="hidden">
-            <h2 class="text-xl font-bold mb-4">Pending Withdrawals</h2>
+        <div id="adminPanel" class="hide">
+            <h2 class="text-xl font-bold mb-4">Dashboard</h2>
+            <div class="glass p-4 rounded-xl mb-6">
+                <input type="text" id="adminNewLink" placeholder="Register New Link" class="w-full bg-black p-3 rounded mb-2 text-xs">
+                <button onclick="registerLink()" class="w-full bg-green-700 py-2 rounded font-bold text-xs">ADD LINK</button>
+            </div>
             <div id="adminList" class="space-y-4"></div>
         </div>
+        <button onclick="closeAdmin()" class="mt-4 text-red-500 font-bold">EXIT ADMIN</button>
     </div>
 
     <script type="module" src="app.js"></script>
