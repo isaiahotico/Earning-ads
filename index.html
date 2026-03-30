@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sentinel Earn - Pro Ads App</title>
+    <title>Sentinel Earn - Community Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <!-- Monetag SDKs -->
@@ -11,128 +11,124 @@
     <script src='//libtl.com/sdk.js' data-zone='10555727' data-sdk='show_10555727'></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --main-bg: linear-gradient(135deg, #0f172a, #065f46); }
-        body { background: var(--main-bg); min-height: 100vh; color: white; transition: background 0.3s; }
-        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); }
+        body { background: linear-gradient(135deg, #0f172a, #064e3b); color: white; min-height: 100vh; font-family: sans-serif; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.1); }
+        .nav-tab.active { color: #10b981; border-bottom: 2px solid #10b981; }
         #task-overlay { display: none; position: fixed; inset: 0; z-index: 100; background: black; }
-        
-        /* The Click Wrapper for Manual Reload */
-        .click-wrapper { position: absolute; inset: 0; z-index: 110; cursor: pointer; }
-        .cooldown-active { pointer-events: none; opacity: 0.5; }
-        
-        .locked-card { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
-        iframe { pointer-events: none; } /* Ensures clicks hit the wrapper div */
+        .reload-trigger { position: absolute; inset: 0; z-index: 110; cursor: pointer; background: rgba(0,0,0,0.01); }
+        .cooldown-lock { pointer-events: none; opacity: 0.5; }
+        iframe { width: 100%; height: 100%; border: none; }
+        .hide { display: none !important; }
     </style>
 </head>
-<body class="font-sans overflow-x-hidden">
+<body class="pb-20">
 
-    <!-- Top Navigation -->
-    <nav class="p-4 glass sticky top-0 z-50 flex justify-between items-center border-b border-white/5">
-        <div class="flex flex-col">
-            <span id="userBar" class="font-bold text-sm text-green-400">👤 Guest</span>
-            <span id="ref-status" class="text-[10px] text-gray-400">Referrals: 0</span>
+    <!-- Top Header -->
+    <header class="p-4 glass sticky top-0 z-50 flex justify-between items-center">
+        <div>
+            <h1 id="userBar" class="font-bold text-green-400 text-sm">👤 Loading...</h1>
+            <p id="balance-header" class="text-xs font-mono text-gray-300">0.00000 USDT</p>
         </div>
         <div class="flex items-center gap-3">
-            <input type="color" id="themePicker" class="w-8 h-8 rounded-full border-none bg-transparent cursor-pointer">
-            <button onclick="openAdmin()" class="text-gray-500 hover:text-white"><i class="fas fa-shield-alt"></i></button>
+            <input type="color" id="themePicker" class="w-6 h-6 rounded-full bg-transparent border-none">
+            <button onclick="openAdmin()" class="opacity-30 hover:opacity-100"><i class="fas fa-user-shield"></i></button>
         </div>
-    </nav>
+    </header>
 
-    <!-- Main Dashboard -->
-    <main class="p-6 max-w-lg mx-auto">
-        <div class="glass rounded-[2rem] p-8 text-center shadow-2xl border border-white/10 mb-8">
-            <p class="text-xs uppercase tracking-tighter text-gray-400 mb-2">Total Balance</p>            <h1 class="text-5xl font-black font-mono tracking-tighter" id="balance-display">0.00000</h1>
-            <p class="text-green-500 font-bold text-sm mb-6">USDT</p>
-            
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="openWithdraw()" class="bg-green-600 hover:bg-green-700 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-green-900/20">Withdraw</button>
-                <button onclick="copyRef()" class="bg-blue-600 hover:bg-blue-700 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20">Invite</button>
+    <!-- Main Content Tabs -->
+    <main id="tab-tasks" class="p-4">
+        <div class="glass rounded-3xl p-6 text-center mb-6">
+            <p class="text-[10px] uppercase text-gray-400">Total Balance</p>
+            <h2 class="text-4xl font-black font-mono my-1" id="main-balance">0.00000</h2>
+            <div class="flex gap-2 mt-4">
+
+                <button onclick="openModal('withdraw')" class="flex-1 bg-green-600 py-2 rounded-xl font-bold text-sm">Withdraw</button>
+                <button onclick="copyInvite()" class="flex-1 bg-blue-600 py-2 rounded-xl font-bold text-sm">Invite</button>
             </div>
         </div>
+        
+        <h3 class="font-bold mb-3 flex justify-between">
+            <span>Available Links</span>
+            <span class="text-xs text-gray-400">Min: 0.02 USDT</span>
+        </h3>
+        <div id="task-grid" class="grid grid-cols-2 gap-3"></div>
+    </main>
 
-        <h2 class="text-xl font-bold mb-4 px-2">Earning Tasks</h2>
-        <div id="task-grid" class="grid grid-cols-2 gap-4">
-            <!-- Tasks rendered by JS -->
+    <!-- Leaderboard Tab -->
+    <main id="tab-leaderboard" class="p-4 hide">
+        <h2 class="text-xl font-bold mb-4"><i class="fas fa-trophy text-yellow-500 mr-2"></i>Top 100 Earners</h2>
+        <div id="leaderboard-list" class="space-y-2"></div>
+    </main>
+
+    <!-- Chat Tab -->
+    <main id="tab-chat" class="p-4 hide flex flex-col h-[75vh]">
+        <h2 class="text-xl font-bold mb-4">Global Chat</h2>
+        <div id="chat-box" class="flex-1 glass rounded-2xl p-4 overflow-y-auto space-y-3 mb-4 text-sm"></div>
+        <div class="flex gap-2">
+            <input type="text" id="chat-input" placeholder="Type message..." class="flex-1 bg-white/10 rounded-xl p-3 outline-none border border-white/10 text-sm">
+            <button onclick="sendMessage()" class="bg-blue-600 px-6 rounded-xl"><i class="fas fa-paper-plane"></i></button>
         </div>
     </main>
 
-    <!-- TASK FULLSCREEN MODAL -->
+    <!-- Navigation Bar -->
+    <nav class="fixed bottom-0 inset-x-0 glass flex justify-around p-3 z-50 border-t border-white/10">
+        <button onclick="switchTab('tasks')" id="nav-tasks" class="nav-tab active flex flex-col items-center"><i class="fas fa-tasks"></i><span class="text-[10px]">Tasks</span></button>
+        <button onclick="switchTab('leaderboard')" id="nav-leaderboard" class="nav-tab flex flex-col items-center"><i class="fas fa-chart-line"></i><span class="text-[10px]">Top 100</span></button>
+        <button onclick="switchTab('chat')" id="nav-chat" class="nav-tab flex flex-col items-center"><i class="fas fa-comments"></i><span class="text-[10px]">Chat</span></button>
+    </nav>
+
+    <!-- TASK OVERLAY -->
     <div id="task-overlay">
-        <!-- Manual Reload Wrapper -->
-        <div class="click-wrapper" id="reload-wrapper" onclick="handleManualReload()"></div>
+        <!-- Overlay disappears after 4 reloads so ads become clickable -->
+        <div id="reload-trigger" class="reload-trigger" onclick="manualReload()"></div>
         
-        <!-- Task Info Bar -->
-        <div class="absolute top-0 inset-x-0 p-4 bg-black/80 z-[120] border-b border-white/10">
-            <div class="flex justify-between items-center mb-3">
-                <span id="reload-stat" class="text-xs font-bold">RELOADS: 0/4</span>
-                <button onclick="closeTask()" class="text-2xl text-red-500 font-bold">&times;</button>
+        <div class="absolute top-0 inset-x-0 glass p-4 z-[120] text-center">
+            <div class="flex justify-between items-center mb-2">
+                <span id="reload-count-ui" class="text-xs font-bold text-blue-400">Tap Website: 0/4</span>
+                <button onclick="closeTask()" class="text-2xl">&times;</button>
             </div>
-            <div class="w-full h-1 bg-gray-800 rounded-full">
-                <div id="task-progress" class="h-full bg-blue-500 transition-all duration-500 w-0"></div>
-            </div>
-            <p id="cooldown-msg" class="text-center text-xs text-yellow-500 font-bold mt-2 hidden">COOLDOWN: 8s (Tap Website to reload)</p>
+            <div class="w-full bg-gray-800 h-1 rounded-full"><div id="task-progress" class="bg-blue-500 h-full w-0 transition-all"></div></div>
+            <p id="cooldown-text" class="text-xs text-red-500 font-bold mt-2 hidden">COOLDOWN 8s</p>
         </div>
 
-        <!-- Gift Task Button -->
-        <div class="absolute right-6 bottom-32 z-[130] text-center">
-            <button id="gift-btn" onclick="handleGiftClick()" class="w-16 h-16 bg-gradient-to-t from-red-600 to-yellow-500 rounded-full shadow-2xl flex items-center justify-center border-4 border-white animate-pulse">
-                <i class="fas fa-gift text-2xl text-white"></i>
-            </button>            <p id="gift-stat" class="text-[10px] mt-2 font-bold text-white bg-black/40 px-2 py-1 rounded-full">Gifts: 0/4</p>
+        <div class="absolute right-4 bottom-32 z-[130]">
+            <button id="gift-btn" onclick="giftTask()" class="w-14 h-14 bg-yellow-500 rounded-full shadow-2xl flex items-center justify-center border-2 border-white animate-bounce">
+                <i class="fas fa-gift text-xl text-red-600"></i>
+            </button>
+            <p id="gift-ui" class="text-[9px] text-center mt-1">Gifts: 0/4</p>
         </div>
 
-        <iframe id="task-iframe" src="" class="w-full h-full border-none"></iframe>
+        <iframe id="task-iframe"></iframe>
+        <button id="claim-btn" onclick="claimTask()" class="absolute bottom-10 inset-x-10 bg-green-600 py-4 rounded-2xl font-bold text-xl hidden z-[140]">CL
 
-        <button id="claim-final-btn" onclick="finishTask()" class="absolute bottom-10 inset-x-10 bg-green-600 py-5 rounded-3xl font-black text-xl shadow-2xl hidden z-[140]">
-            CLAIM 0.00014 USDT
-        </button>
+AIM REWARD</button>
     </div>
 
     <!-- WITHDRAW MODAL -->
-    <div id="withdraw-modal" class="fixed inset-0 bg-black/95 hidden z-[200] p-6 flex items-center justify-center">
-        <div class="glass w-full max-w-sm rounded-[2.5rem] p-8 border border-white/20">
-            <h3 class="text-2xl font-bold mb-2">Withdraw</h3>
-            <p class="text-xs text-gray-400 mb-6">Minimum: 0.02 USDT</p>
-            
-            <select id="wd-method" class="w-full bg-white/10 p-4 rounded-2xl mb-4 border border-white/10">
-                <option value="GCash">GCash</option>
-                <option value="PayPal">PayPal</option>
-                <option value="FaucetPay">FaucetPay (USDT)</option>
-            </select>
-            <input type="text" id="wd-address" placeholder="Number / Email / Wallet" class="w-full bg-white/10 p-4 rounded-2xl mb-4 border border-white/10">
-            <input type="number" id="wd-amount" placeholder="Amount (USDT)" class="w-full bg-white/10 p-4 rounded-2xl mb-6 border border-white/10"><button onclick="requestWithdraw()" class="w-full bg-green-600 py-4 rounded-2xl font-bold">Submit Request</button>
-            <button onclick="closeWithdraw()" class="w-full mt-4 text-sm text-gray-500">Cancel</button>
+    <div id="withdraw-modal" class="fixed inset-0 bg-black/90 hidden z-[200] p-8 flex items-center justify-center">
+        <div class="glass w-full p-6 rounded-3xl">
+            <h3 class="text-xl font-bold mb-4">Withdraw USDT</h3>
+            <select id="wd-method" class="w-full bg-white/10 p-3 rounded-xl mb-4"><option>GCash</option><option>PayPal</option><option>FaucetPay</option></select>
+            <input type="text" id="wd-address" placeholder="Address/Number" class="w-full bg-white/10 p-3 rounded-xl mb-4 outline-none">
+            <input type="number" id="wd-amount" placeholder="Amount (Min 0.02)" class="w-full bg-white/10 p-3 rounded-xl mb-6 outline-none">
+            <button onclick="submitWithdraw()" class="w-full bg-green-600 py-3 rounded-xl font-bold">Request</button>
+            <button onclick="closeModal('withdraw')" class="w-full mt-2 text-gray-500 text-sm">Cancel</button>
         </div>
     </div>
 
     <!-- ADMIN MODAL -->
-    <div id="admin-modal" class="fixed inset-0 bg-slate-950 hidden z-[300] overflow-y-auto p-6">
-        <div class="max-w-xl mx-auto">
-            <div class="flex justify-between items-center mb-8">
-                <h1 class="text-2xl font-bold">Admin Dashboard</h1>
-                <button onclick="closeAdmin()" class="text-3xl">&times;</button>
-            </div>
-
-            <div id="admin-login" class="space-y-4">
-                <input type="password" id="admin-pass" placeholder="Admin PIN" class="w-full bg-slate-900 p-4 rounded-xl border border-white/10">
-                <button onclick="tryAdminLogin()" class="w-full bg-blue-600 py-4 rounded-xl font-bold">Unlock Access</button>
-            </div>
-
-            <div id="admin-panel" class="hidden space-y-8">
-                <!-- Add Link -->
-                <div class="glass p-6 rounded-2xl">
-                    <h3 class="font-bold mb-4">Register New Task Link</h3>
-                    <input type="text" id="admin-new-link" class="w-full bg-black p-3 rounded-lg mb-2 text-sm border border-white/10">
-                    <button onclick="adminAddLink()" class="w-full bg-blue-600 py-2 rounded-lg text-sm font-bold">Save Link</button>
-                </div>
-
-                <!-- Withdrawal List -->
-                <div>
-                    <h3 class="font-bold text-yellow-500 mb-4">Pending Approval Queue</h3>
-                    <div id="admin-wd-list" class="space-y-4">
-                        <!-- Items via JS -->
-                    </div>
-                </div>
-            </div>
+    <div id="admin-modal" class="fixed inset-0 bg-slate-950 hidden z-[300] p-6 overflow-y-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold">Admin</h2>
+            <button onclick="closeModal('admin')" class="text-2xl">&times;</button>
+        </div>
+        <div id="admin-login-ui">
+            <input type="password" id="admin-pass" placeholder="Password" class="w-full bg-white/5 p-4 rounded-xl mb-4">
+            <button onclick="adminLogin()" class="w-full bg-blue-600 py-3 rounded-xl">Login</button>
+        </div>
+        <div id="admin-dashboard" class="hidden">
+            <h3 class="text-yellow-500 mb-4">Withdrawal Requests</h3>
+            <div id="admin-wd-list" class="space-y-4"></div>
         </div>
     </div>
 
