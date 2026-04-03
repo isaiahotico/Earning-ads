@@ -45,7 +45,12 @@ const TASK_LINKS = [
     "https://sentinelgroup15.blogspot.com/?m=1", "https://sentinelgroup14.blogspot.com/?m=1",
     "https://isaiahrossoticoblog5.blogspot.com/?m=1", "https://isaiahrossoticoblog4.blogspot.com/?m=1",
     "https://isaiahrossoticoblog3.blogspot.com/?m=1", "https://isaiahrossoticoblog2.blogspot.com/?m=1",
-    "https://isaiahrossotico1.blogspot.com/?m=1"
+    "https://isaiahrossotico1.blogspot.com/?m=1", "https://skilabo.co.jp/",  "https://skilabo.co.jp",
+    "https://skilabo.co.jp", "https://skilabo.co.jp",
+    "https://skilabo.co.jp", "https://skilabo.co.jp",
+    "https://skilabo.co.jp", "https://skilabo.co.jp",
+    "https://skilabo.co.jp", "https://skilabo.co.jp",
+    "https://skilabo.co.jp"
 ];
 
 // --- Core Logic ---
