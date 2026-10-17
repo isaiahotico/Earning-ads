@@ -1,501 +1,457 @@
-/**
- * Monetag AdHub Pro Engine - Version 6.0
- * Exclusively High eCPM Rewarded Interstitials (Popups Permanently Removed)
- * Separate SDK Domain and Numeric Zone ID fields, Clickable Dual-Trigger Engine,
- * Automatic Universal Storage Migration (v1-v5 -> v6) & 5-Click Auto-Purge.
- */
 
-// --- RANDOM SHINING METALLIC COLORWAYS ---
-const SHINE_THEMES = [
-  'card-shine-gold',
-  'card-shine-ruby',
-  'card-shine-sapphire',
-  'card-shine-emerald',
-  'card-shine-amethyst',
-  'card-shine-cybercyan',
-  'card-shine-rosegold',
-  'card-shine-obsidian'
-];
 
-// Default Monetag SDK Domain
-const DEFAULT_SDK_DOMAIN = "niphaumeenses.com";
+`javascript
+"use strict";
 
-// --- USER PROFILE & LOCAL STORAGE ---
-function getUserProfile() {
-  const stored = localStorage.getItem('monetag_user_v6');
-  if (stored) {
-    try { return JSON.parse(stored); } catch (e) {}
+const STAT_INFO = {
+  hp: {
+    label: "HP",
+    description: "Each point adds 10 maximum health."
+  },
+  damage: {
+    label: "Damage",
+    description: "Adds power to your attacks."
+  },
+  speed: {
+    label: "Speed",
+    description: "Faster fighters get the opening hit."
+  },
+  defence: {
+    label: "Defence",
+    description: "Reduces incoming attack damage."
+  },
+  critical: {
+    label: "Critical",
+    description: "Each point adds 2% critical chance."
+  },
+  dodge: {
+    label: "Dodge",
+    description: "Each point adds 1.5% chance to evade."
+  },
+  regeneration: {
+    label: "Regeneration",
+    description: "Recover health at the start of your turn."
   }
+};
 
-  // Check previous versions for seamless migration
-  const legacyUser = localStorage.getItem('monetag_user_v5') ||
-                     localStorage.getItem('monetag_user_v4') ||
-                     localStorage.getItem('monetag_sdk_user_v3') ||
-                     localStorage.getItem('monetag_zone_user_v2') ||
-                     localStorage.getItem('monetag_hub_user_v1');
-  let credits = 15;
-  let username = "Creator_" + Math.floor(1000 + Math.random() * 9000);
+const STAT_KEYS = Object.keys(STAT_INFO);
+const STORAGE_KEY = "cardbound-save-v1";
 
-  if (legacyUser) {
-    try {
-      const u = JSON.parse(legacyUser);
-      if (u.username) username = u.username;
-      if (typeof u.credits === 'number') credits = u.credits;
-    } catch (e) {}
+const MONSTERS = {
+  small: [
+    { name: "Mossfang", emoji: "🐺", title: "Thicket Stalker", hp: 72, damage: 8, speed: 9, defence: 4, critical: 5, dodge: 5, regeneration: 2 },
+    { name: "Cave Imp", emoji: "👺", title: "Cavern Trickster", hp: 65, damage: 9, speed: 12, defence: 3, critical: 8, dodge: 8, regeneration: 1 },
+    { name: "Pebble Golem", emoji: "🗿", title: "Little Stone Guard", hp: 90, damage: 7, speed: 5, defence: 8, critical: 3, dodge: 2, regeneration: 3 },
+    { name: "Ember Slime", emoji: "🔥", title: "Flickering Ooze", hp: 70, damage: 8, speed: 8, defence: 5, critical: 6, dodge: 6, regeneration: 4 }
+  ],
+  medium: [
+    { name: "Grave Knight", emoji: "💀", title: "Oathbound Sentinel", hp: 112, damage: 13, speed: 10, defence: 9, critical: 9, dodge: 5, regeneration: 3 },
+    { name: "Storm Harpy", emoji: "🦅", title: "Lightning Wing", hp: 94, damage: 14, speed: 16, defence: 5, critical: 13, dodge: 12, regeneration: 2 },
+    { name: "Ironhide Brute", emoji: "🧌", title: "Bridge Breaker", hp: 135, damage: 12, speed: 7, defence: 13, critical: 6, dodge: 3, regeneration: 4 },
+    { name: "Frost Witch", emoji: "🧙", title: "Whiteout Weaver", hp: 102, damage: 12, speed: 12, defence: 7, critical: 12, dodge: 8, regeneration: 5 }
+  ],
+  large: [
+    { name: "Abyssal Dragon", emoji: "🐉", title: "The Dread Below", hp: 178, damage: 19, speed: 13, defence: 12, critical: 15, dodge: 8, regeneration: 6 },
+    { name: "Titan of Ash", emoji: "👹", title: "World-Ender", hp: 205, damage: 17, speed: 9, defence: 18, critical: 10, dodge: 4, regeneration: 8 },
+    { name: "Void Reaper", emoji: "☠️", title: "Last Light Hunter", hp: 158, damage: 21, speed: 18, defence: 10, critical: 18, dodge: 14, regeneration: 5 },
+    { name: "Elder Chimera", emoji: "🦁", title: "Threefold Terror", hp: 185, damage: 18, speed: 14, defence: 13, critical: 14, dodge: 10, regeneration: 7 }
+  ]
+};
+
+function freshState() {
+  const stats = {};
+  for (const key of STAT_KEYS) stats[key] = 10;
+
+  return {
+    stats,
+    points: 0,
+    wins: 0,
+    losses: 0,
+    currentHp: 100,
+    enemy: null,
+    guarding: false,
+    history: [],
+    log: ["Welcome, duelist. Search the dungeon when you are ready."]
+  };
+}
+
+function loadState() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!saved || !saved.stats) return freshState();
+
+const state = freshState();
+    state.stats = { ...state.stats, ...saved.stats };
+    state.points = Number(saved.points) || 0;
+    state.wins = Number(saved.wins) || 0;
+    state.losses = Number(saved.losses) || 0;
+    state.history = Array.isArray(saved.history) ? saved.history.slice(0, 8) : [];
+    state.log = Array.isArray(saved.log) ? saved.log.slice(0, 30) : state.log;
+    state.enemy = saved.enemy || null;
+    state.guarding = Boolean(saved.guarding);
+
+    const maxHp = state.stats.hp * 10;
+    state.currentHp = Math.max(1, Math.min(Number(saved.currentHp) || maxHp, maxHp));
+
+    // Don't reload into an unwinnable saved encounter with zero health.
+    if (state.currentHp <= 0) state.currentHp = maxHp;
+
+    return state;
+  } catch {
+    return freshState();
   }
-
-  const initial = { username, credits };
-  saveUserProfile(initial);
-  return initial;
 }
 
-function saveUserProfile(p) {
-  localStorage.setItem('monetag_user_v6', JSON.stringify(p));
+let state = loadState();
+
+const playerCard = document.getElementById("player-card");
+const enemyCard = document.getElementById("enemy-card");
+const battleLog = document.getElementById("battle-log");
+const historyList = document.getElementById("history-list");
+const battleStatus = document.getElementById("battle-status");
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-// --- SANITIZE & CLEAN SDK DOMAIN INPUT ---
-function cleanSdkDomainInput(input) {
-  if (!input) return DEFAULT_SDK_DOMAIN;
-  let str = input.trim();
-  str = str.replace(/<[^>]*>/g, '');
-  const match = str.match(/src=["'](.*?)["']/i);
-  if (match && match[1]) str = match[1];
-
-  str = str.replace(/^https?:\/\//i, '').replace(/^\/\//, '');
-  str = str.split('?')[0].split('/')[0];
-
-  return str.length > 3 ? str : DEFAULT_SDK_DOMAIN;
+function addLog(message, type = "") {
+  state.log.unshift({ message, type });
+  state.log = state.log.slice(0, 30);
 }
 
-// --- UNIVERSAL DATA MIGRATION ENGINE (V1-V5 -> V6) ---
-// Popups converted exclusively into High eCPM Rewarded Interstitials
-function getStoredAds() {
-  let stored = localStorage.getItem('monetag_ads_v6');
-  if (!stored) {
-    stored = localStorage.getItem('monetag_ads_v5') ||
-             localStorage.getItem('monetag_ads_v4') ||
-             localStorage.getItem('monetag_sdk_ads_v3') ||
-             localStorage.getItem('monetag_zone_ads_v2') ||
-             localStorage.getItem('monetag_hub_ads_v1');
-  }
-
-  if (stored) {
-    try {
-      let parsed = JSON.parse(stored);
-      const migrated = parsed.map(ad => ({
-        id: ad.id || ("AD_" + Date.now() + "_" + Math.floor(Math.random() * 9999)),
-        author: ad.author || "Publisher",
-        title: ad.title || "Monetag Rewarded Interstitial",
-        format: "Rewarded Interstitial", // Hard-locked to Rewarded Interstitials only
-        sdkDomain: cleanSdkDomainInput(ad.sdkDomain || ad.sdkCode),
-        zoneId: String(ad.zoneId || "10555746"),
-        desc: ad.desc || "Watch this high eCPM rewarded interstitial ad and earn +1 credit!",
-        clicks: typeof ad.clicks === 'number' ? ad.clicks : 0,
-        theme: ad.theme || SHINE_THEMES[Math.floor(Math.random() * SHINE_THEMES.length)],
-        createdAt: ad.createdAt || Date.now()
-      }));
-      saveStoredAds(migrated);
-      return migrated;
-    } catch (e) {
-      console.warn("Storage migration notice:", e);
-    }
-  }
-
-  // Pre-seeded Rewarded Interstitial campaigns for live testing
-  const seedAds = [
-    {
-      id: "AD_" + Date.now() + "_1",
-      author: "MonetagPartner",
-      title: "High eCPM Rewarded Interstitial Unit #1",
-      format: "Rewarded Interstitial",
-      sdkDomain: "niphaumeenses.com",
-      zoneId: "10555746",
-      desc: "Live Monetag Rewarded Zone #10555746. Click to watch the ad and earn +1 credit!",
-      clicks: 2,
-      theme: "card-shine-gold",
-      createdAt: Date.now()
-    },
-    {
-      id: "AD_" + Date.now() + "_2",
-      author: "CryptoBoost",
-      title: "Global Rewarded Interstitial Stream #2",
-      format: "Rewarded Interstitial",
-      sdkDomain: "niphaumeenses.com",
-      zoneId: "10555746",
-      desc: "Instant rewarded interstitial stream with verified credit claim.",
-      clicks: 4,
-      theme: "card-shine-ruby",
-      createdAt: Date.now() - 3600000
-    },
-    {
-      id: "AD_" + Date.now() + "_3",
-      author: "GamerLoot",
-      title: "Gaming Bonus Rewarded Interstitial #3",
-      format: "Rewarded Interstitial",
-      sdkDomain: "niphaumeenses.com",
-      zoneId: "10555746",
-      desc: "Pure rewarded interstitial format with maximum eCPM return.",
-      clicks: 1,
-      theme: "card-shine-cybercyan",
-      createdAt: Date.now() - 7200000
-    }
-  ];
-  saveStoredAds(seedAds);
-  return seedAds;
+function formatStat(key, value) {
+  if (key === "critical") return ${Math.min(value * 2, 75)}%;
+  if (key === "dodge") return ${Math.min(value * 1.5, 35)}%;
+  if (key === "hp") return ${value} <span class="muted">(${value * 10} max)</span>;
+  if (key === "regeneration") return ${Math.floor(value / 5)} / turn;
+  return String(value);
 }
 
-function saveStoredAds(ads) {
-  localStorage.setItem('monetag_ads_v6', JSON.stringify(ads));
-}
-
-// --- APPLICATION STATE ---
-let currentUser = getUserProfile();
-let currentAds = getStoredAds();
-let activeInteractingAd = null;
-let countdownInterval = null;
-
-// --- UPDATE UI STATS ---
-function updateHeaderUI() {
-  document.getElementById('header-username').innerText = currentUser.username;
-  document.getElementById('header-balance').innerText = currentUser.credits;
-  document.getElementById('stats-balance').innerText = `${currentUser.credits} Credits`;
-}
-
-// --- RENDER ADS FEED (SHINING CARDS & 5-CLICK AUTO-DISAPPEAR) ---
-function refreshAdGrid() {
-  updateHeaderUI();
-  const grid = document.getElementById('ads-grid');
-  const emptyState = document.getElementById('empty-state');
-  const countBadge = document.getElementById('active-ads-count');
-
-  // Filter active ads (< 5 clicks)
-  const activeAds = currentAds.filter(ad => (ad.clicks || 0) < 5);
-  countBadge.innerText = `${activeAds.length} Active`;
-
-  if (activeAds.length === 0) {
-    grid.innerHTML = "";
-    emptyState.classList.remove('hidden');
-    return;
-  }
-
-  emptyState.classList.add('hidden');
-
-  grid.innerHTML = activeAds.map(ad => {
-    const clicks = ad.clicks || 0;
-    const progressPct = (clicks / 5) * 100;
-    const clicksRemaining = 5 - clicks;
+function makeStatsMarkup(stats, isPlayer) {
+  return STAT_KEYS.map(key => {
+    const info = STAT_INFO[key];
+    const value = stats[key] ?? 10;
+    const upgradeButton = isPlayer
+      ? <button class="plus" data-upgrade="${key}" title="Upgrade ${info.label}" aria-label="Upgrade ${info.label}" ${state.points <= 0 ? "disabled" : ""}>+</button>
+      : "";
 
     return `
-    <article id="ad-card-${ad.id}" class="${ad.theme || 'card-shine-gold'} shimmer-layer rounded-3xl p-4 sm:p-5 flex flex-col justify-between transition hover:-translate-y-1 duration-300 relative shadow-xl">
-      
-      <!-- Card Header -->
-      <div class="space-y-2 relative z-10">
-        <div class="flex items-center justify-between text-[10px] font-mono">
-          <span class="px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 font-bold border border-emerald-500/30">
-            <i class="fa-solid fa-bolt text-amber-300 mr-1"></i>Rewarded Interstitial
-          </span>
-          <span class="text-white/80 font-semibold truncate max-w-[120px]">
-            By @${escapeHtml(ad.author)}
-          </span>
+      <div class="stat" title="${info.description}">
+        <div class="stat-left">
+          ${upgradeButton}
+          <span class="stat-label">${info.label}</span>
         </div>
-
-        <h4 class="font-syne font-extrabold text-sm sm:text-base text-white leading-tight drop-shadow">
-          ${escapeHtml(ad.title)}
-        </h4>
-
-        <!-- Separated SDK Domain & Zone Badges -->
-        <div class="flex flex-wrap gap-1.5 items-center">
-          <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-black/60 border border-white/10 text-[10px] font-mono text-amber-300 font-bold">
-            <i class="fa-solid fa-hashtag text-[8px] text-amber-400"></i>
-            <span>Zone: ${escapeHtml(ad.zoneId)}</span>
-          </div>
-          <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-cyan-950/70 border border-cyan-500/30 text-[9px] font-mono text-cyan-300">
-            <i class="fa-solid fa-globe text-[8px]"></i>
-            <span class="truncate max-w-[110px]">${escapeHtml(ad.sdkDomain)}</span>
-          </div>
-        </div>
-
-        ${ad.desc ? `<p class="text-xs text-white/80 line-clamp-2 leading-relaxed mt-1">${escapeHtml(ad.desc)}</p>` : ''}
+        <span class="stat-value">${formatStat(key, value)}</span>
       </div>
-
-      <!-- 5-Click Progress Meter & Action Button -->
-      <div class="pt-4 space-y-3 relative z-10">
-        
-        <div class="space-y-1">
-          <div class="flex justify-between text-[10px] font-mono font-bold text-white/90">
-            <span>PROGRESS: ${clicks} / 5 CLICKS</span>
-            <span class="${clicksRemaining === 1 ? 'text-rose-300 animate-pulse' : 'text-amber-200'}">
-              ${clicksRemaining} Left to Disappear
-            </span>
-          </div>
-          <div class="w-full h-2 rounded-full bg-black/60 overflow-hidden border border-white/10">
-            <div class="h-full bg-gradient-to-r from-amber-300 via-rose-400 to-emerald-400 transition-all duration-500" style="width: ${progressPct}%"></div>
-          </div>
-        </div>
-
-        <!-- 100% Clickable Action Button -->
-        <button type="button" onclick="triggerMonetagAd('${ad.id}')" class="ad-click-btn w-full py-2.5 px-4 rounded-xl bg-slate-950/90 hover:bg-black border border-white/30 text-white font-bold text-xs flex items-center justify-between shadow-lg transition group">
-          <span class="flex items-center gap-1.5 text-emerald-300">
-            <i class="fa-solid fa-film"></i>
-            <span>WATCH REWARDED AD (+1 CREDIT)</span>
-          </span>
-          <i class="fa-solid fa-arrow-right text-xs text-white/70 group-hover:translate-x-1 transition"></i>
-        </button>
-
-      </div>
-    </article>
     `;
-  }).join('');
+  }).join("");
 }
 
-// --- DUAL-TRIGGER REWARDED INTERSTITIAL EXECUTION ENGINE ---
-function executeMonetagTrigger(sdkDomain, zoneId) {
-  const cleanDomain = cleanSdkDomainInput(sdkDomain);
-  const fullScriptUrl = `https://${cleanDomain}/tag.min.js`;
+function renderPlayer() {
+  const maxHp = state.stats.hp * 10;
+  const hpPercent = Math.max(0, Math.min(100, (state.currentHp / maxHp) * 100));
 
-  // 1. Dynamic In-Page Tag Injection for Rewarded Interstitial
-  try {
-    const container = document.getElementById('monetag-dynamic-container');
-    container.innerHTML = '';
-
-    const script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = fullScriptUrl;
-    script.setAttribute('data-zone', zoneId);
-    script.async = true;
-
-    script.onload = () => {
-      try {
-        // Specifically invoke Rewarded Interstitial methods
-        if (typeof window.show_rewarded_interstitial === 'function') {
-          window.show_rewarded_interstitial({ zoneId: parseInt(zoneId) });
-        } else if (typeof window.show_interstitial === 'function') {
-          window.show_interstitial(parseInt(zoneId));
-        }
-      } catch (e) {
-        console.warn("Direct Monetag function call notice:", e);
-      }
-    };
-
-    container.appendChild(script);
-  } catch (e) {
-    console.warn("Script injection notice:", e);
-  }
-
-  // 2. Direct Window Trigger Fallback (Guarantees user sees ad even if ad blocker blocks tag)
-  try {
-    const fallbackUrl = `https://${cleanDomain}/tag.min.js?zone=${encodeURIComponent(zoneId)}`;
-    const popup = window.open(fallbackUrl, '_blank');
-    if (popup) {
-      setTimeout(() => popup.focus(), 200);
-    }
-  } catch (e) {
-    console.warn("Fallback notice:", e);
-  }
+  playerCard.innerHTML = `
+    <article class="card">
+      <div class="card-top">
+        <div style="display:flex;gap:13px;align-items:center">
+          <div class="avatar" aria-hidden="true">🧑‍🚀</div>
+          <div>
+            <div class="name-line">
+              <h3>Dungeon Duelist</h3>
+              <span class="rarity">Adventurer</span>
+            </div>
+            <p class="card-description">A rising champion, ready to challenge the depths.</p>
+          </div>
+        </div>
+      </div>
+      <div class="health-block">
+        <div class="health-label">
+          <span>Health</span>
+          <span>state.currentHp / {maxHp}</span>
+        </div>
+        <div class="health-track"><div class="health-fill" style="width:${hpPercent}%"></div></div>
+      </div>
+      <div class="stats-grid">${makeStatsMarkup(state.stats, true)}</div>
+    </article>
+  `;
 }
 
-// --- PRE-TEST REWARDED INTERSTITIAL IN CREATE MODAL ---
-function testAdBeforePublishing() {
-  const sdkDomain = document.getElementById('ad-sdk-domain').value.trim() || DEFAULT_SDK_DOMAIN;
-  const zoneId = document.getElementById('ad-zone-id').value.trim();
-
-  if (!zoneId || isNaN(zoneId) || parseInt(zoneId) <= 0) {
-    alert("⚠️ Please enter a valid numeric Zone ID (e.g. 10555746) to test!");
+function renderEnemy() {
+  if (!state.enemy) {
+    enemyCard.innerHTML = `
+      <div class="enemy-empty">
+        <div><span class="empty-icon">🕯️</span>
+          <strong>No monster found</strong><br />
+          Choose a dungeon tier below to search.
+        </div>
+      </div>
+    `;
+    document.getElementById("encounter-badge").textContent = "No opponent";
     return;
   }
 
-  executeMonetagTrigger(sdkDomain, zoneId);
+const enemy = state.enemy;
+  const hpPercent = Math.max(0, Math.min(100, (enemy.currentHp / enemy.maxHp) * 100));
 
-  const badge = document.getElementById('test-status-badge');
-  badge.className = "px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold border border-emerald-500/40";
-  badge.innerHTML = `<i class="fa-solid fa-circle-check mr-1"></i>Verified &amp; Clickable!`;
-
-  alert(`🚀 Rewarded Interstitial triggered for Domain: ${cleanSdkDomainInput(sdkDomain)} & Zone #${zoneId}!\nIf you see the ad, your campaign is verified and ready to post.`);
+  enemyCard.innerHTML = `
+    <article class="card">
+      <div class="card-top">
+        <div style="display:flex;gap:13px;align-items:center">
+          <div class="avatar" aria-hidden="true">${enemy.emoji}</div>
+          <div>
+            <div class="name-line">
+              <h3>${enemy.name}</h3>
+              <span class="rarity">enemy.tier · {enemy.title}</span>
+            </div>
+            <p class="card-description">A dungeon monster blocks your path. Choose your move.</p>
+          </div>
+        </div>
+      </div>
+      <div class="health-block">
+        <div class="health-label">
+          <span>Monster health</span>
+          <span>enemy.currentHp / {enemy.maxHp}</span>
+        </div>
+        <div class="health-track">
+          <div class="health-fill enemy" style="width:${hpPercent}%"></div>
+        </div>
+      </div>
+      <div class="stats-grid">${makeStatsMarkup(enemy, false)}</div>
+    </article>
+  `;
+  document.getElementById("encounter-badge").textContent = ${enemy.tier} monster;
 }
 
-// --- USER CLICKS AD FROM PUBLIC FEED ---
-function triggerMonetagAd(adId) {
-  const ad = currentAds.find(a => a.id === adId);
-  if (!ad) return;
-
-  activeInteractingAd = ad;
-
-  // 1. Immediately execute Monetag rewarded interstitial
-  executeMonetagTrigger(ad.sdkDomain, ad.zoneId);
-
-  // 2. Open engagement verification timer modal
-  document.getElementById('view-ad-title').innerText = ad.title;
-  document.getElementById('view-ad-zone-id').innerText = `Zone: #${ad.zoneId} • Rewarded Interstitial`;
-  document.getElementById('modal-view-ad').classList.remove('hidden');
-
-  const claimBtn = document.getElementById('btn-claim-credit');
-  claimBtn.disabled = true;
-  claimBtn.className = "flex-1 py-2 rounded-xl bg-slate-800 text-slate-500 font-extrabold text-xs transition cursor-not-allowed";
-  claimBtn.innerText = "Verifying View...";
-
-  let timeLeft = 5;
-  const countElem = document.getElementById('ad-countdown');
-  countElem.innerText = `${timeLeft}s`;
-
-  if (countdownInterval) clearInterval(countdownInterval);
-
-  countdownInterval = setInterval(() => {
-    timeLeft--;
-    if (timeLeft > 0) {
-      countElem.innerText = `${timeLeft}s`;
-    } else {
-      clearInterval(countdownInterval);
-      countElem.innerText = "VERIFIED!";
-      claimBtn.disabled = false;
-      claimBtn.className = "flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-extrabold text-xs shadow-lg active:scale-95 transition cursor-pointer";
-      claimBtn.innerText = "CLAIM +1 CREDIT NOW";
-    }
-  }, 1000);
+function renderLog() {
+  battleLog.innerHTML = state.log.map(entry => {
+    const item = typeof entry === "string" ? { message: entry, type: "" } : entry;
+    return <p class="log-entry ${item.type || ""}">${item.message}</p>;
+  }).join("");
 }
 
-// --- RELAUNCH BUTTON IF AD DID NOT SHOW ---
-function relaunchActiveAd() {
-  if (!activeInteractingAd) return;
-  executeMonetagTrigger(activeInteractingAd.sdkDomain, activeInteractingAd.zoneId);
+function renderHistory() {
+  if (!state.history.length) {
+    historyList.innerHTML = <div class="muted" style="font-size:12px">No battles recorded yet.</div>;
+    return;
+  }
+
+  historyList.innerHTML = state.history.map(item => `
+    <div class="history-item">
+      <span>item.monster <span class="{item.result === "Victory" ? "win" : "loss"}">· ${item.result}</span></span>
+      <span>${item.tier}</span>
+    </div>
+  `).join("");
 }
 
-// --- CLAIM REWARD & CHECK 5-CLICK DISAPPEARANCE ---
-function claimAdReward() {
-  if (!activeInteractingAd) return;
+function render() {
+  renderPlayer();
+  renderEnemy();
+  renderLog();
+  renderHistory();
 
-  const ad = currentAds.find(a => a.id === activeInteractingAd.id);
-  if (!ad) return;
+  document.getElementById("wins-count").textContent = state.wins;
+  document.getElementById("points-badge").textContent =
+    ${state.points} upgrade point${state.points === 1 ? "" : "s"};
+  document.getElementById("record-summary").textContent = ${state.wins}W · ${state.losses}L;
 
-  // Close modal
-  document.getElementById('modal-view-ad').classList.add('hidden');
+  const hasEnemy = Boolean(state.enemy);
+  document.getElementById("attack-button").disabled = !hasEnemy;
+  document.getElementById("defend-button").disabled = !hasEnemy;
 
-  // 1. Reward user with +1 Credit
-  currentUser.credits = (currentUser.credits || 0) + 1;
-  saveUserProfile(currentUser);
+  document.querySelectorAll(".search-button").forEach(button => {
+    button.disabled = hasEnemy;
+  });
 
-  // 2. Increment click count
-  ad.clicks = (ad.clicks || 0) + 1;
-
-  // 3. Auto-disappear after exactly 5 clicks
-  if (ad.clicks >= 5) {
-    const cardElem = document.getElementById(`ad-card-${ad.id}`);
-    if (cardElem) {
-      cardElem.classList.add('disappear-anim');
-    }
-
-    setTimeout(() => {
-      // Purge permanently from the public feed
-      currentAds = currentAds.filter(a => a.id !== ad.id);
-      saveStoredAds(currentAds);
-      refreshAdGrid();
-    }, 550);
+  if (hasEnemy) {
+    battleStatus.textContent = "Your turn. Strike to attack, or defend to reduce the next hit.";
+  } else if (state.currentHp < state.stats.hp * 10) {
+    battleStatus.textContent = "You recover between battles. Your health will be restored before the next search.";
   } else {
-    saveStoredAds(currentAds);
-    refreshAdGrid();
+    battleStatus.textContent = "Search a dungeon to find your next opponent.";
   }
 
-  alert(`🎉 Success! You earned +1 Credit for viewing Monetag Rewarded Interstitial #${ad.zoneId}.`);
-  activeInteractingAd = null;
+  saveState();
 }
 
-// --- CREATE MONETAG AD (COSTS 5 CREDITS) ---
-function openCreateAdModal() {
-  if ((currentUser.credits || 0) < 5) {
-    alert("⚠️ You need at least 5 Credits to post a Monetag ad! Click on other ads in the feed to earn credits.");
-    return;
+function upgradeStat(key) {
+  if (!STAT_KEYS.includes(key) || state.points <= 0) return;
+
+  state.points -= 1;
+  state.stats[key] += 1;
+
+  if (key === "hp") {
+    state.currentHp += 10;
   }
-  const badge = document.getElementById('test-status-badge');
-  if (badge) {
-    badge.className = "px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono";
-    badge.innerText = "Not Tested";
-  }
-  document.getElementById('ad-sdk-domain').value = DEFAULT_SDK_DOMAIN;
-  document.getElementById('modal-create-ad').classList.remove('hidden');
+
+  addLog(${STAT_INFO[key].label} increased to ${state.stats[key]}., "special");
+  render();
 }
 
-function closeCreateAdModal() {
-  document.getElementById('modal-create-ad').classList.add('hidden');
-  document.getElementById('create-ad-form').reset();
-}
+function searchDungeon(tier) {
+  if (state.enemy || !MONSTERS[tier]) return;
 
-function submitMonetagPost(e) {
-  e.preventDefault();
-
-  if ((currentUser.credits || 0) < 5) {
-    alert("Insufficient credits! Posting costs 5 credits.");
-    return;
-  }
-
-  const title = document.getElementById('ad-title').value.trim();
-  const sdkDomainInput = document.getElementById('ad-sdk-domain').value.trim();
-  const zoneIdInput = document.getElementById('ad-zone-id').value.trim();
-  const desc = document.getElementById('ad-desc').value.trim();
-
-  // Validate zone ID
-  if (!zoneIdInput || isNaN(zoneIdInput) || parseInt(zoneIdInput) <= 0) {
-    alert("Please enter a valid numeric Monetag Zone ID (e.g. 10555746).");
-    return;
-  }
-
-  const cleanDomain = cleanSdkDomainInput(sdkDomainInput);
-
-  // Deduct 5 credits from publisher
-  currentUser.credits -= 5;
-  saveUserProfile(currentUser);
-
-  // Pick random shining metallic color theme
-  const randomTheme = SHINE_THEMES[Math.floor(Math.random() * SHINE_THEMES.length)];
-
-  const newAd = {
-    id: "AD_" + Date.now() + "_" + Math.floor(Math.random() * 9999),
-    author: currentUser.username,
-    title: title,
-    format: "Rewarded Interstitial", // Hard-locked to Rewarded Interstitial
-    sdkDomain: cleanDomain,
-    zoneId: String(zoneIdInput),
-    desc: desc,
-    clicks: 0,
-    theme: randomTheme,
-    createdAt: Date.now()
+  const choices = MONSTERS[tier];
+  const template = choices[Math.floor(Math.random() * choices.length)];
+  const monster = {
+    ...template,
+    tier: tier.charAt(0).toUpperCase() + tier.slice(1),
+    maxHp: template.hp,
+    currentHp: template.hp
   };
 
-  currentAds.unshift(newAd);
-  saveStoredAds(currentAds);
+  state.currentHp = state.stats.hp * 10;
+  state.enemy = monster;
+  state.guarding = false;
 
-  closeCreateAdModal();
-  refreshAdGrid();
-  alert(`✨ Monetag Rewarded Interstitial Zone #${newAd.zoneId} published! 5 Credits deducted. It will disappear after 5 clicks.`);
+  addLog(You searched the ${tier} dungeon and encountered ${monster.name}!, "special");
+
+// A faster monster gets the opening strike.
+  if (monster.speed > state.stats.speed) {
+    addLog(${monster.name} is faster and strikes first!, "bad");
+    monsterTurn();
+    if (state.enemy && state.currentHp > 0) {
+      addLog("The opening attack is over. Your turn!", "special");
+    }
+  }
+
+  render();
 }
 
-// --- USERNAME MANAGEMENT ---
-function openUsernameModal() {
-  document.getElementById('input-new-username').value = currentUser.username;
-  document.getElementById('modal-username').classList.remove('hidden');
+function dodgeChance(stats) {
+  return Math.min((stats.dodge || 0) * 0.015, 0.35);
 }
 
-function closeUsernameModal() {
-  document.getElementById('modal-username').classList.add('hidden');
+function criticalChance(stats) {
+  return Math.min((stats.critical || 0) * 0.02, 0.75);
 }
 
-function saveNewUsername() {
-  const input = document.getElementById('input-new-username');
-  const newName = input.value.trim().replace(/^@/, '');
-  if (!newName) {
-    alert("Please enter a valid username.");
+function dealAttack(attacker, defender, targetType, isGuarded = false) {
+  const targetName = targetType === "player" ? "You" : defender.name;
+
+  if (Math.random() < dodgeChance(defender)) {
+    addLog(${targetName} dodged the attack!, targetType === "player" ? "good" : "bad");
+    return 0;
+  }
+
+  const isCritical = Math.random() < criticalChance(attacker);
+  const rawDamage = attacker.damage * (isCritical ? 1.6 : 1);
+  const mitigation = (defender.defence || 0) * 0.45;
+  let damage = Math.max(1, Math.round(rawDamage - mitigation));
+
+  if (isGuarded) damage = Math.max(1, Math.round(damage * 0.35));
+
+  if (targetType === "player") {
+    state.currentHp = Math.max(0, state.currentHp - damage);
+  } else {
+    defender.currentHp = Math.max(0, defender.currentHp - damage);
+  }
+
+  const attackerName = targetType === "player" ? defender.name : "You";
+  const criticalText = isCritical ? " Critical hit!" : "";
+  const guardText = isGuarded ? " Your defence softened the blow." : "";
+  const type = targetType === "player" ? "bad" : "good";
+
+  addLog(${attackerName} dealt ${damage} damage to ${targetName}.${criticalText}${guardText}, type);
+  return damage;
+}
+
+function monsterTurn() {
+  if (!state.enemy) return;
+
+  const healing = Math.floor(state.enemy.regeneration / 5);
+  if (healing > 0 && state.enemy.currentHp < state.enemy.maxHp) {
+    const actual = Math.min(healing, state.enemy.maxHp - state.enemy.currentHp);
+    state.enemy.currentHp += actual;
+    addLog(${state.enemy.name} regenerated ${actual} health., "special");
+  }
+
+  const wasGuarding = state.guarding;
+  state.guarding = false;
+  dealAttack(state.enemy, state.stats, "player", wasGuarding);
+
+  if (state.currentHp <= 0) finishBattle(false);
+}
+
+function playerTurn(action) {
+  if (!state.enemy) return;
+
+  const healing = Math.floor(state.stats.regeneration / 5);
+  if (healing > 0 && state.currentHp < state.stats.hp * 10) {
+    const actual = Math.min(healing, state.stats.hp * 10 - state.currentHp);
+    state.currentHp += actual;
+    addLog(You regenerated ${actual} health., "good");
+  }
+
+  if (action === "attack") {
+    dealAttack(state.stats, state.enemy, "monster");
+    if (state.enemy.currentHp <= 0) {
+      finishBattle(true);
+      render();
+      return;
+    }
+  } else {
+    state.guarding = true;
+    addLog("You take a defensive stance. The next monster attack is reduced.", "special");
+  }
+
+  if (state.enemy) monsterTurn();
+  render();
+}
+
+function finishBattle(won) {
+  if (!state.enemy) return;
+
+  const monster = state.enemy;
+  const result = won ? "Victory" : "Defeat";
+
+  if (won) {
+    state.wins += 1;
+    addLog(${monster.name} was defeated!, "good");
+
+    if (Math.random() < 0.03) {
+      state.points += 1;
+      addLog("Lucky find! You gained 1 upgrade point.", "special");
+    } else {
+      addLog("No upgrade point this time. Every victory has a 3% chance to earn one.");
+    }
+  } else {
+    state.losses += 1;
+    addLog(You were defeated by ${monster.name}. Recover and try again., "bad");
+    state.currentHp = state.stats.hp * 10;
+  }
+
+  state.history.unshift({
+    monster: monster.name,
+    tier: monster.tier,
+    result
+  });
+  state.history = state.history.slice(0, 8);
+  state.enemy = null;
+
+state.guarding = false;
+}
+
+document.addEventListener("click", event => {
+  const upgrade = event.target.closest("[data-upgrade]");
+  if (upgrade) {
+    upgradeStat(upgrade.dataset.upgrade);
     return;
   }
-  currentUser.username = newName;
-  saveUserProfile(currentUser);
-  closeUsernameModal();
-  refreshAdGrid();
-}
 
-// --- HELPER: ESCAPE HTML ---
-function escapeHtml(s) {
-  return s ? String(s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])) : '';
-}
-
-// --- INITIALIZE APPLICATION ---
-window.addEventListener('DOMContentLoaded', () => {
-  refreshAdGrid();
+  const search = event.target.closest("[data-tier]");
+  if (search) {
+    searchDungeon(search.dataset.tier);
+  }
 });
+
+document.getElementById("attack-button").addEventListener("click", () => playerTurn("attack"));
+document.getElementById("defend-button").addEventListener("click", () => playerTurn("defend"));
+
+document.getElementById("reset-button").addEventListener("click", () => {
+  if (!window.confirm("Reset your fighter, upgrades, and battle record?")) return;
+  state = freshState();
+  render();
+});
+
+render();
