@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>EarnPulse Pro - Tasks, Web Browser & Rewards</title>
+  
+  <!-- FontAwesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Official Ad SDK Script -->
+  <script src="//libtl.com/sdk.js" data-zone="10555663" data-sdk="show_10555663"></script>
+
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --card-bg: #111726;
+      --card-border: #1e293b;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-gold: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --bottom-bar-h: 68px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-bottom: calc(var(--bottom-bar-h) + 15px);
+    }
+
+    /* Top App Header */
+    header {
+      background: rgba(17, 23, 38, 0.95);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #3b82f6, #10b981);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand h1 {
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+    }
+
+    .wallet-pill {
+      background: #1e293b;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--accent-gold);
+    }
+
+    /* Navigation Sections */
+    .app-section {
+      display: none;
+      padding: 16px;
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      animation: fadeIn 0.25s ease-in-out;
+    }
+
+    .app-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-main);
+    }
+
+    /* Badge & Info tags */
+    .badge {
+      display: inline-block;
+      padding: 4px 9px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-primary { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #2563eb; }
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #059669; }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #d97706; }
+    .badge-danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #dc2626; }
+
+    /* Time Schedule Banner */
+    .schedule-banner {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+      border: 1px solid #334155;
+      padding: 14px 16px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      border: none;
+      outline: none;
+      padding: 14px 18px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn-primary { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+    .btn-accent { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+    .btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+    .btn-dark { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+
+    /* Progress bar */
+    .progress-wrapper {
+      margin: 14px 0 6px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 10px;
+      background: #1e293b;
+      border-radius: 99px;
+      overflow: hidden;
+      border: 1px solid #334155;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      transition: width 0.3s ease;
+      border-radius: 99px;
+    }
+
+    /* Section 2: In-App Browser */
+    .browser-container {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 160px);
+      min-height: 520px;
+    }
+
+    .browser-topbar {
+      background: #0f172a;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .browser-tab-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .browser-tab-btn.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #3b82f6;
+    }
+
+    .browser-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .browser-icon-btn {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+    }
+
+    .browser-frame-wrap {
+      flex: 1;
+      position: relative;
+      background: #ffffff;
+    }
+
+    .browser-frame-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    .browser-fallback-note {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      right: 12px;
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      padding: 10px 14px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      z-index: 5;
+    }
+
+    /* Section 3: Chat */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 190px);
+      min-height: 480px;
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #0b101c;
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+      margin-bottom: 12px;
+    }
+
+    .chat-bubble {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      word-break: break-word;
+      line-height: 1.4;
+    }
+
+    .chat-bubble.other {
+      align-self: flex-start;
+      background: #1e293b;
+      border-bottom-left-radius: 2px;
+      color: #e2e8f0;
+    }
+
+    .chat-bubble.mine {
+      align-self: flex-end;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      border-bottom-right-radius: 2px;
+      color: #ffffff;
+    }
+
+    .chat-sender {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin-bottom: 3px;
+    }
+
+    .chat-time {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    .chat-inputs {
+      display: flex;
+      gap: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #0b101c;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      padding: 12px 14px;
+      color: #f8fafc;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+
+    /* Section 4: Withdrawal & History */
+    .history-table-wrap {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+
+    table.custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      text-align: left;
+    }
+
+    table.custom-table th, table.custom-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    table.custom-table th {
+      color: #94a3b8;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+    }
+
+    /* Bottom Navigation Bar */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--bottom-bar-h);
+      background: rgba(15, 23, 42, 0.98);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 1000;
+      padding: 0 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      height: 100%;
+      transition: color 0.2s;
+    }
+
+    .nav-item i {
+      font-size: 1.15rem;
+    }
+
+    .nav-item.active {
+      color: #3b82f6;
+    }
+
+    .nav-item.active i {
+      transform: translateY(-2px);
+    }
+
+    /* Modal / Alert Dialog */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 22px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Small utilities */
+    .text-center { text-align: center; }
+    .mt-2 { margin-top: 8px; }
+    .mt-3 { margin-top: 12px; }
+    .mt-4 { margin-top: 16px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Bar -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-bolt"></i></div>
+      <div>
+        <h1>EarnPulse Pro</h1>
+        <div style="font-size: 0.68rem; color: var(--text-muted);">Daily Tasks & Micro Earning</div>
+      </div>
+    </div>
+    <div class="wallet-pill">
+      <i class="fa-solid fa-coins"></i>
+      <span id="userBalanceDisplay">₱0.00</span>
+      <span style="font-size: 0.68rem; color: #94a3b8;" id="usdBalanceDisplay">($0.000)</span>
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- SECTION 1: OFFICE & HOURLY AD TASKS        -->
+  <!-- ========================================== -->
+  <main id="section-office" class="app-section active">
+    
+    <!-- Daily Time Window Notification -->
+    <div class="schedule-banner">
+      <div>
+        <div style="font-size: 0.85rem; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-clock"></i> Task Operating Hours
+        </div>
+        <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
+          Open daily from <strong style="color: #60a5fa;">13:30 (1:30 PM)</strong> to <strong style="color: #60a5fa;">20:00 (8:00 PM)</strong>.
+        </div>
+      </div>
+      <div id="windowStatusBadge" class="badge badge-warning">Checking...</div>
+    </div>
+
+    <!-- Task Progress Overview -->
+    <div class="card">
+      <div class="card-title">
+        <i class="fa-solid fa-list-check" style="color: var(--primary);"></i>
+        Hourly Earning Task (₱1.00 / $0.018 per claim)
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+        Complete Step 1 (Pop-up Interstitial) and Step 2 (Watch 52 Rewarded Interstitials) to unlock your ₱1.00 reward. 
+        Available once every hour up to <strong>6 times daily</strong>!
+      </p>
+
+      <div class="flex-between mt-3" style="font-size: 0.78rem;">
+        <span>Daily Claims Completed:</span>
+        <strong id="dailyClaimsDisplay" style="color: var(--accent);">0 / 6 Claims</strong>
+      </div>
+      
+      <div class="flex-between mt-2" style="font-size: 0.78rem;">
+        <span>Step 1: Popup Interstitial:</span>
+        <span id="step1Status" class="badge badge-danger">Not Done</span>
+      </div>
+
+      <div class="flex-between mt-2" style="font-size: 0.78rem;">
+        <span>Step 2: Rewarded Ads:</span>
+        <strong id="step2Counter" style="color: #60a5fa;">0 / 52 Ads</strong>
+      </div>
+
+      <div class="progress-wrapper">
+        <div class="progress-bar">
+          <div id="rewardProgressBar" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <div id="cooldownTimerWrap" style="display: none; margin-top: 10px; font-size: 0.78rem; color: #fbbf24; text-align: center;">
+        <i class="fa-solid fa-hourglass-half"></i> Next hourly claim unlocks in: <strong id="cooldownTimerText">00:00:00</strong>
+      </div>
+    </div>
+
+    <!-- 2 Ad Interactive Buttons -->
+    <div class="card">
+      <div class="card-title">
+        <i class="fa-solid fa-play" style="color: var(--accent);"></i>
+        Office Ads Station
+      </div>
+
+      <!-- Button 1: Popup Interstitial -->
+      <div style="margin-bottom: 14px;">
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">
+          <strong>Step 1:</strong> Launch Popup Interstitial Ad
+        </div>
+        <button id="btnPopupAd" class="btn btn-primary">
+          <i class="fa-solid fa-window-restore"></i> Open Popup Interstitial Ad
+        </button>
+      </div>
+
+      <!-- Button 2: Rewarded Interstitial (52 Count) -->
+      <div>
+        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">
+          <strong>Step 2:</strong> View Rewarded Interstitial (Click to complete 52 count)
+        </div>
+        <button id="btnRewardedAd" class="btn btn-accent" disabled>
+          <i class="fa-solid fa-video"></i> Watch Rewarded Interstitial (<span id="btnRewardedCounter">0</span>/52)
+        </button>
+      </div>
+
+      <!-- Claim Button -->
+      <div class="mt-4">
+        <button id="btnClaimReward" class="btn btn-warning" disabled>
+          <i class="fa-solid fa-gift"></i> Claim ₱1.00 / $0.018 Reward
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- SECTION 2: WEBSITES IN-APP BROWSER         -->
+  <!-- ========================================== -->
+  <main id="section-websites" class="app-section">
+    <div class="browser-container">
+      <div class="browser-topbar">
+        <button class="browser-tab-btn active" id="tabVieFaucet" onclick="loadInternalUrl('viefaucet')">
+          <i class="fa-solid fa-faucet"></i> VieFaucet
+        </button>
+        <button class="browser-tab-btn" id="tabLuckyWatch" onclick="loadInternalUrl('luckywatch')">
+          <i class="fa-solid fa-briefcase"></i> LuckyWatch (WorkerCash)
+        </button>
+
+        <div class="browser-actions">
+          <button class="browser-icon-btn" onclick="reloadInternalBrowser()" title="Reload"><i class="fa-solid fa-rotate-right"></i></button>
+          <button class="browser-icon-btn" onclick="openCurrentUrlExternal()" title="Open In Separate Window"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
+        </div>
+      </div>
+
+      <div class="browser-frame-wrap">
+        <iframe id="appBrowserFrame" src="https://viefaucet.com?r=68cbac6ff3d6128dca2a1878" sandbox="allow-forms allow-modals allow-orientation-lock allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-scripts allow-same-origin allow-downloads"></iframe>
+        
+        <div class="browser-fallback-note">
+          <span><i class="fa-solid fa-circle-info"></i> In-app smooth navigation active. If a faucet restricts internal embedding:</span>
+          <button class="btn btn-dark" style="padding: 4px 10px; width: auto; font-size: 0.7rem;" onclick="openCurrentUrlExternal()">
+            Open In App Tab <i class="fa-solid fa-external-link"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- SECTION 3: COMMUNITY CHAT                  -->
+  <!-- ========================================== -->
+  <main id="section-chat" class="app-section">
+    <div class="card chat-container">
+      <div class="card-title flex-between">
+        <span style="display: flex; align-items: center; gap: 8px;">
+          <i class="fa-solid fa-comments" style="color: var(--primary);"></i> Community Chat Room
+        </span>
+        <button class="btn btn-dark" style="width: auto; padding: 4px 10px; font-size: 0.72rem;" onclick="promptChangeUsername()">
+          <i class="fa-solid fa-user-pen"></i> <span id="currentUsernameLabel">Guest</span>
+        </button>
+      </div>
+
+      <div class="chat-messages" id="chatMessagesContainer">
+        <!-- Messages rendered by app.js -->
+      </div>
+
+      <form id="chatForm" class="chat-inputs" onsubmit="handleSendChat(event)">
+        <input type="text" id="chatInput" class="form-input" placeholder="Type a message to other workers..." required autocomplete="off" />
+        <button type="submit" class="btn btn-primary" style="width: auto; padding: 0 20px;">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- SECTION 4: WITHDRAWAL & HISTORY            -->
+  <!-- ========================================== -->
+  <main id="section-withdraw" class="app-section">
+    <div class="card">
+      <div class="card-title">
+        <i class="fa-solid fa-wallet" style="color: var(--accent);"></i>
+        Request Withdrawal
+      </div>
+      <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 14px;">
+        Minimum payout threshold is <strong>₱1.00 (or $0.018 USD)</strong>. Processed to your GCash or FaucetPay account.
+      </p>
+
+      <form id="withdrawForm" onsubmit="handleWithdrawalSubmit(event)">
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 5px;">Your Full Name</label>
+          <input type="text" id="wdName" class="form-input" placeholder="Juan Dela Cruz" required />
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 5px;">Withdrawal Method</label>
+          <select id="wdMethod" class="form-input" onchange="handleWdMethodChange()">
+            <option value="GCash">GCash (Philippines Mobile Number)</option>
+            <option value="FaucetPay">FaucetPay (Registered Email)</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 12px;">
+          <label id="wdAccountLabel" style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 5px;">GCash Mobile Number</label>
+          <input type="text" id="wdAccount" class="form-input" placeholder="09xxxxxxxxx" required />
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="font-size: 0.75rem; color: #94a3b8; display: block; margin-bottom: 5px;">Amount in PHP (₱)</label>
+          <input type="number" id="wdAmount" class="form-input" step="0.01" min="1.00" placeholder="1.00" required />
+          <div style="font-size: 0.7rem; color: #64748b; margin-top: 4px;">Equivalent: <span id="wdUsdEquivalent">$0.018 USD</span></div>
+        </div>
+
+        <button type="submit" class="btn btn-accent">
+          <i class="fa-solid fa-money-bill-transfer"></i> Submit Withdrawal Request
+        </button>
+      </form>
+    </div>
+
+    <!-- Withdrawal History -->
+    <div class="card">
+      <div class="card-title">
+        <i class="fa-solid fa-clock-rotate-left"></i> Withdrawal History
+      </div>
+      <div class="history-table-wrap">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Date/Time</th>
+              <th>Name</th>
+              <th>Method / Account</th>
+              <th>Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="withdrawalHistoryBody">
+            <!-- Records populated by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========================================== -->
+  <!-- SECTION 5: ADMIN PORTAL                    -->
+  <!-- ========================================== -->
+  <main id="section-admin" class="app-section">
+    
+    <!-- Login Guard -->
+    <div id="adminLoginBlock" class="card" style="max-width: 400px; margin: 30px auto;">
+      <div class="card-title text-center" style="justify-content: center;">
+        <i class="fa-solid fa-shield-halved" style="color: #ef4444;"></i> Admin Authentication
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 14px;">
+        Enter system security key to manage requests.
+      </p>
+      <form onsubmit="handleAdminLogin(event)">
+        <input type="password" id="adminPasswordInput" class="form-input" placeholder="Enter password" required />
+        <button type="submit" class="btn btn-primary mt-3">
+          <i class="fa-solid fa-lock-open"></i> Unlock Panel
+        </button>
+      </form>
+    </div>
+
+    <!-- Admin Operations Dashboard -->
+    <div id="adminDashboard" style="display: none;">
+      <div class="flex-between mb-3" style="margin-bottom: 14px;">
+        <h2 style="font-size: 1.1rem; font-weight: 800;"><i class="fa-solid fa-screwdriver-wrench"></i> Admin Management Center</h2>
+        <button class="btn btn-dark" style="width: auto; padding: 6px 12px; font-size: 0.75rem;" onclick="adminLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Lock
+        </button>
+      </div>
+
+      <!-- Metrics Row -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+        <div class="card" style="margin-bottom: 0;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Total Withdrawn</div>
+          <div style="font-size: 1.3rem; font-weight: 800; color: #10b981; margin-top: 4px;" id="adminTotalApproved">₱0.00</div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Pending Approvals</div>
+          <div style="font-size: 1.3rem; font-weight: 800; color: #f59e0b; margin-top: 4px;" id="adminPendingCount">0 Requests</div>
+        </div>
+        <div class="card" style="margin-bottom: 0;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Time Check Bypass</div>
+          <button class="btn btn-dark" style="padding: 6px 10px; font-size: 0.72rem; margin-top: 6px;" id="btnToggleTimeBypass" onclick="toggleTimeWindowBypass()">
+            Bypass: OFF
+          </button>
+        </div>
+      </div>
+
+      <!-- Pending Withdrawals Management Table -->
+      <div class="card">
+        <div class="card-title">
+          <i class="fa-solid fa-hand-holding-dollar"></i> User Withdrawal Approvals
+        </div>
+        <div class="history-table-wrap">
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>User & Account</th>
+                <th>Amount</th>
+                <th>Timestamp</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminWithdrawalsTableBody">
+              <!-- Admin approval rows injected here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Bottom Navigation Bar -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchSection('office', this)">
+      <i class="fa-solid fa-briefcase"></i>
+      <span>Office</span>
+    </button>
+    <button class="nav-item" onclick="switchSection('websites', this)">
+      <i class="fa-solid fa-globe"></i>
+      <span>Websites</span>
+    </button>
+    <button class="nav-item" onclick="switchSection('chat', this)">
+      <i class="fa-solid fa-comments"></i>
+      <span>Chat</span>
+    </button>
+    <button class="nav-item" onclick="switchSection('withdraw', this)">
+      <i class="fa-solid fa-wallet"></i>
+      <span>Withdraw</span>
+    </button>
+    <button class="nav-item" onclick="switchSection('admin', this)">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span>Admin</span>
+    </button>
+  </nav>
+
+  <!-- Global Modal Popup -->
+  <div id="generalModal" class="modal-overlay">
+    <div class="modal-content">
+      <div id="modalTitle" style="font-size: 1rem; font-weight: 700; margin-bottom: 8px;">Notice</div>
+      <div id="modalBody" style="font-size: 0.82rem; color: #94a3b8; line-height: 1.5; margin-bottom: 16px;">Message</div>
+      <button class="btn btn-primary" onclick="closeModal()">OK</button>
+    </div>
+  </div>
+
+  <!-- App Main Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
