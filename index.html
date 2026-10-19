@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Paperhouse Inc. - Advance Ads CDN & Workspace Platform</title>
+
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Ad Network SDK -->
+  <script src="//libtl.com/sdk.js" data-zone="10555663" data-sdk="show_10555663"></script>
+
+  <!-- Firebase SDKs (Compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <style>
+    body { background-color: #0b0f19; color: #f1f5f9; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .glass-box { background: rgba(17, 24, 39, 0.75); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #374151; border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pb-24 md:pb-6">
+
+  <!-- TOP APP BAR -->
+  <header class="glass-box sticky top-0 z-50 px-4 py-3 shadow-xl flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 via-orange-500 to-red-500 flex items-center justify-center font-black text-white shadow-lg shadow-orange-500/20 text-lg">
+        P
+      </div>
+      <div>
+        <h1 class="text-base sm:text-lg font-black tracking-wide bg-gradient-to-r from-amber-400 via-orange-400 to-amber-200 bg-clip-text text-transparent">
+          Paperhouse Inc.
+        </h1>
+        <p class="text-[10px] text-slate-400 font-medium">Advance Ads CDN & Workspace Platform</p>
+      </div>
+    </div>
+
+    <!-- User Live Balance Tag -->
+    <div class="flex items-center space-x-3">
+      <div class="text-right">
+        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Balance</span>
+        <span id="nav-balance" class="text-xs sm:text-sm font-extrabold text-emerald-400">₱0.00 / $0.000</span>
+      </div>
+      <button onclick="switchTab('wallet-tab')" title="Wallet & Withdraw" class="bg-slate-800 hover:bg-slate-700 text-amber-400 p-2.5 rounded-xl border border-slate-700 transition">
+        <i class="fa-solid fa-wallet"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- USER IDENTIFICATION MODAL -->
+  <div id="username-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="glass-box max-w-sm w-full p-6 rounded-3xl shadow-2xl border border-amber-500/30 text-center">
+      <div class="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto mb-4 text-2xl">
+        <i class="fa-solid fa-user-gear"></i>
+      </div>
+      <h2 class="text-xl font-black mb-1 text-white">Join Paperhouse Inc.</h2>
+      <p class="text-xs text-slate-400 mb-5">Enter your public worker name to sync your balance, post videos, and participate in community tasks.</p>
+      <input type="text" id="username-input" placeholder="e.g. SatoshiWorker" class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm mb-4 focus:outline-none focus:border-amber-400">
+      <button onclick="saveUserProfile()" class="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 font-bold py-3 rounded-xl text-slate-950 transition text-sm">
+        Start Working
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-5">
+
+    <!-- TAB 1: YOUTUBE CINEMA & PUBLIC FEED -->
+    <section id="youtube-tab" class="tab-content space-y-6">
+      <div class="glass-box p-5 rounded-3xl shadow-2xl">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-base sm:text-lg font-bold text-red-400 flex items-center gap-2">
+            <i class="fa-brands fa-youtube text-red-500 text-xl"></i> Embedded YouTube Cinema
+          </h2>
+          <span class="text-[11px] text-slate-400 bg-slate-900 px-3 py-1 rounded-full border border-slate-800">Direct CDN Player</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+          <input type="text" id="yt-url-input" placeholder="Paste YouTube link (e.g. https://youtu.be/... or watch?v=...)" class="md:col-span-2 px-4 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-red-500">
+          <div class="flex gap-2">
+            <button onclick="playCustomVideo()" class="flex-1 bg-red-600 hover:bg-red-700 font-bold py-2.5 px-3 rounded-xl text-white text-xs flex items-center justify-center gap-1.5 transition">
+              <i class="fa-solid fa-play"></i> Watch
+            </button>
+            <button onclick="postVideoToPublic()" class="flex-1 bg-slate-800 hover:bg-slate-700 border border-red-500/30 text-red-300 font-bold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Share to Feed
+            </button>
+          </div>
+        </div>
+
+        <!-- Cinema Screen -->
+        <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-2xl">
+          <iframe id="main-yt-iframe" class="w-full h-full" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="YouTube Cinema" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>
+
+      <!-- Public Feed Stream -->
+      <div class="glass-box p-5 rounded-3xl shadow-xl">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i class="fa-solid fa-bullhorn text-amber-400"></i> Public Community Video Feed
+          </h3>
+          <span class="text-[11px] text-slate-500">Click any card to play</span>
+        </div>
+        <div id="public-yt-feed" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto custom-scroll pr-1">
+          <!-- Populated from Firebase -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: OFFICE WORKSPACE & HOURLY TASK ENGINE -->
+    <section id="office-tab" class="tab-content hidden space-y-6">
+
+      <!-- HOURLY TASK CARD (13:30 - 20:00) -->
+      <div class="glass-box p-5 rounded-3xl border-l-4 border-amber-500 shadow-2xl space-y-4">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base sm:text-lg font-black text-amber-400">Task 1: Hourly Ads Bounty (₱1.00 / $0.018)</h2>
+            </div>
+            <p class="text-xs text-slate-300 mt-0.5">
+              Strict Time Window: <span class="text-amber-300 font-bold">13:30 – 20:00 PM</span> daily. Claimable once every hour (Max 6x daily).
+            </p>
+          </div>
+          <div id="task-window-badge" class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-900 border border-slate-700 text-slate-400">
+            Checking schedule...
+          </div>
+        </div>
+
+        <!-- Task Checklist Steps -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Step 1: Popup Ad -->
+          <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-bold text-slate-200">Step 1: Open Popup Interstitial</span>
+                <span id="pop-task-status" class="font-bold text-red-400 text-[11px]"><i class="fa-solid fa-circle-xmark"></i> Incomplete</span>
+              </div>
+              <p class="text-[11px] text-slate-400 mb-3">Watch popup ad completely or close after timeout.</p>
+            </div>
+            <button onclick="runPopAdTask()" class="w-full bg-blue-600 hover:bg-blue-700 py-2.5 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-window-restore"></i> Complete Popup Ad (Step 1)
+            </button>
+          </div>
+
+          <!-- Step 2: 52 Rewarded Ads -->
+          <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="font-bold text-slate-200">Step 2: Rewarded Interstitial</span>
+                <span id="rewarded-task-status" class="font-bold text-red-400 text-[11px]">0 / 52</span>
+              </div>
+              <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden mb-2">
+                <div id="rewarded-progress-bar" class="bg-gradient-to-r from-amber-500 to-emerald-400 h-full w-0 transition-all duration-300"></div>
+              </div>
+            </div>
+            <button onclick="runRewardedAdTask()" class="w-full bg-amber-500 hover:bg-amber-600 py-2.5 rounded-xl text-xs font-bold text-slate-950 transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-circle-play"></i> Watch Rewarded Ad (Click 52x)
+            </button>
+          </div>
+        </div>
+
+        <!-- Claim Action Bar -->
+        <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="text-xs text-slate-400">
+            Completed claims today: <span id="claims-today-counter" class="text-white font-black">0</span> / 6 (₱<span id="claims-earned-counter">0.00</span> earned)
+          </div>
+          <button id="claim-task-btn" onclick="claimHourlyTaskReward()" disabled class="w-full sm:w-auto px-6 py-3 bg-slate-800 text-slate-500 cursor-not-allowed font-black rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-hand-holding-dollar text-sm"></i> Claim ₱1.00 ($0.018) Reward
+          </button>
+        </div>
+      </div>
+
+      <!-- OFFICE ADS SECTION (Pop & Rewarded Quick Triggers) -->
+      <div class="glass-box p-5 rounded-3xl shadow-xl">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-rectangle-ad text-amber-400"></i> Office Ad Trigger Controls
+        </h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onclick="triggerPopupInterstitial()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-indigo-600/20">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i> 1. Trigger Popup Interstitial
+          </button>
+          <button onclick="triggerRewardedInterstitial()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-emerald-600/20">
+            <i class="fa-solid fa-award"></i> 2. Trigger Rewarded Interstitial
+          </button>
+        </div>
+      </div>
+
+      <!-- WORKSTATION BROWSER (WITH GOOGLE LOGIN BYPASS) -->
+      <div class="glass-box p-5 rounded-3xl shadow-2xl space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <i class="fa-solid fa-network-wired text-emerald-400"></i> Partner Workspaces (Persistent In-App Browser)
+            </h3>
+            <p class="text-[11px] text-slate-400">Work smoothly inside the app without closing pages.</p>
+          </div>
+          <!-- Google Login Fix Guide & Trigger -->
+          <button onclick="openExternalLoginWindow()" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md transition">
+            <i class="fa-brands fa-google text-amber-300"></i> Fix Google Login
+          </button>
+        </div>
+
+        <!-- Google Login Explainer Note -->
+        <div class="bg-amber-500/10 border border-amber-500/25 p-3 rounded-2xl flex items-start gap-2.5 text-xs text-amber-200">
+          <i class="fa-solid fa-triangle-exclamation text-amber-400 mt-0.5"></i>
+          <div>
+            <span class="font-bold">Google Login Error Workaround:</span> Google restricts OAuth within iframes for security. Click <span class="underline font-bold">"Fix Google Login"</span> to log in via a dedicated secure window once. Then reload the in-app frame below to remain logged in permanently!
+          </div>
+        </div>
+
+        <!-- Workspace Tabs & Custom In-App URL Bar -->
+        <div class="bg-slate-900 p-2.5 rounded-2xl border border-slate-800 flex flex-wrap items-center gap-2">
+          <div class="flex gap-1.5">
+            <button onclick="switchWorkSite(1)" id="site-tab-1" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition">VieFaucet</button>
+            <button onclick="switchWorkSite(2)" id="site-tab-2" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-slate-300 transition">LuckyWatch</button>
+          </div>
+
+          <div class="flex-1 flex items-center bg-slate-950 rounded-xl px-3 py-1 border border-slate-800 min-w-[200px]">
+            <input type="text" id="inapp-url-input" value="https://viefaucet.com?r=68cbac6ff3d6128dca2a1878" class="flex-1 bg-transparent text-[11px] text-slate-300 focus:outline-none">
+            <button onclick="navigateInAppFrame()" class="text-amber-400 text-xs px-2"><i class="fa-solid fa-arrow-right"></i></button>
+          </div>
+
+          <div class="flex gap-2 text-xs">
+            <button onclick="reloadWorkIframe()" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300" title="Reload Frame"><i class="fa-solid fa-rotate-right"></i></button>
+            <a id="work-ext-link" href="https://viefaucet.com?r=68cbac6ff3d6128dca2a1878" target="_blank" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-amber-400" title="Open in Browser"><i class="fa-solid fa-external-link"></i></a>
+          </div>
+        </div>
+
+        <!-- Embedded Work Frame -->
+        <div class="w-full h-[540px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
+          <iframe id="work-iframe" src="https://viefaucet.com?r=68cbac6ff3d6128dca2a1878" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: COMMUNITY CHAT SECTION -->
+    <section id="chat-tab" class="tab-content hidden">
+      <div class="glass-box rounded-3xl p-4 sm:p-5 flex flex-col h-[75vh] shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-comments text-amber-400 text-lg"></i>
+            <h2 class="text-sm sm:text-base font-bold text-white">Public Workers Lounge</h2>
+          </div>
+          <span class="text-xs text-slate-400" id="chat-user-label">Worker: Guest</span>
+        </div>
+
+        <!-- Chat Stream -->
+        <div id="chat-messages-box" class="flex-1 overflow-y-auto custom-scroll space-y-3 pr-2">
+          <!-- Populated from Firebase -->
+        </div>
+
+        <!-- Input Bar -->
+        <form onsubmit="sendChatMessage(event)" class="mt-3 flex gap-2">
+          <input type="text" id="chat-text-input" placeholder="Type a message to other workers..." class="flex-1 bg-slate-900 border border-slate-700 rounded-2xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-400">
+          <button type="submit" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-bold px-6 py-3 rounded-2xl text-sm transition">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 4: DAILY ADS LEADERBOARD -->
+    <section id="leaderboard-tab" class="tab-content hidden space-y-4">
+      <div class="glass-box p-5 rounded-3xl shadow-xl">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-amber-400 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-amber-500"></i> Daily Ads Watch Leaderboard
+            </h2>
+            <p class="text-xs text-slate-400">Resets everyday at midnight (00:00 UTC).</p>
+          </div>
+          <span id="leaderboard-date-badge" class="text-xs bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-slate-300">Date: Today</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="uppercase bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[11px]">
+              <tr>
+                <th class="py-3 px-4">Rank</th>
+                <th class="py-3 px-4">Worker Name</th>
+                <th class="py-3 px-4 text-right">Ads Watched Today</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboard-tbody" class="divide-y divide-slate-800">
+              <!-- Populated from Firebase -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: WITHDRAWAL & WALLET SECTION -->
+    <section id="wallet-tab" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Balance Info -->
+        <div class="glass-box p-5 rounded-3xl flex flex-col justify-center">
+          <span class="text-xs text-slate-400 uppercase font-semibold">Available Balance</span>
+          <div class="text-3xl font-black text-emerald-400 mt-1" id="wallet-balance-php">₱0.00</div>
+          <div class="text-xs text-slate-400" id="wallet-balance-usd">≈ $0.000 USD</div>
+          <div class="text-[11px] text-amber-400 mt-3 font-semibold flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-info"></i> Minimum: ₱1.00 ($0.018 USD)
+          </div>
+        </div>
+
+        <!-- Withdrawal Form -->
+        <div class="glass-box p-5 rounded-3xl md:col-span-2">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-slate-300 mb-3">Submit Withdrawal Request</h3>
+          <form onsubmit="submitWithdrawal(event)" class="space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="text-[11px] font-bold text-slate-400 block mb-1">Amount (PHP)</label>
+                <input type="number" step="0.01" min="1.00" id="withdraw-amount" placeholder="Min. 1.00" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-400">
+              </div>
+              <div>
+                <label class="text-[11px] font-bold text-slate-400 block mb-1">Payment Method</label>
+                <select id="withdraw-method" onchange="toggleWithdrawPlaceholder()" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-400">
+                  <option value="GCash">GCash (Mobile Number)</option>
+                  <option value="FaucetPay">FaucetPay (Gmail/Email)</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="text-[11px] font-bold text-slate-400 block mb-1" id="withdraw-account-label">GCash Mobile Number</label>
+              <input type="text" id="withdraw-account" placeholder="e.g. 09123456789" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-400">
+            </div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 font-extrabold py-3 rounded-xl text-slate-950 text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20">
+              <i class="fa-solid fa-paper-plane"></i> Request Withdrawal
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- User All-Time Withdrawal History -->
+      <div class="glass-box p-5 rounded-3xl shadow-xl">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+          <i class="fa-solid fa-clock-rotate-left text-amber-400"></i> All-Time Withdrawal History
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="uppercase bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
+              <tr>
+                <th class="py-2.5 px-3">Date & Time</th>
+                <th class="py-2.5 px-3">Name</th>
+                <th class="py-2.5 px-3">Method & Number/Gmail</th>
+                <th class="py-2.5 px-3">Amount (PHP / USD)</th>
+                <th class="py-2.5 px-3">Status</th>
+              </tr>
+            </thead>
+            <tbody id="user-withdrawal-history" class="divide-y divide-slate-800">
+              <!-- Populated from Firebase -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: ADMIN AUDIT & APPROVAL SECTION -->
+    <section id="admin-tab" class="tab-content hidden space-y-6">
+      <!-- Admin Login -->
+      <div id="admin-login-box" class="glass-box p-8 rounded-3xl max-w-md mx-auto text-center space-y-4 shadow-2xl">
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto text-2xl">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2 class="text-lg font-black text-white">Paperhouse Admin Authorization</h2>
+        <p class="text-xs text-slate-400">Enter administrator credentials to audit withdrawals and manage balances.</p>
+        <input type="password" id="admin-password-input" placeholder="Enter Admin Password..." class="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-400">
+        <button onclick="loginAdmin()" class="w-full bg-amber-500 hover:bg-amber-600 font-bold py-3 rounded-xl text-slate-950 text-sm transition">
+          Unlock Admin Dashboard
+        </button>
+      </div>
+
+      <!-- Admin Unlocked Dashboard -->
+      <div id="admin-dashboard-box" class="hidden space-y-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base sm:text-lg font-black text-amber-400 flex items-center gap-2">
+              <i class="fa-solid fa-user-shield"></i> Administrator Control Center
+            </h2>
+            <p class="text-xs text-slate-400">Complete records and approvals for GCash and FaucetPay requests</p>
+          </div>
+          <button onclick="logoutAdmin()" class="text-xs bg-red-600/20 hover:bg-red-600 border border-red-500 text-red-300 hover:text-white px-3.5 py-1.5 rounded-xl transition">
+            Exit Admin Mode
+          </button>
+        </div>
+
+        <!-- Aggregate Ledger Metrics -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="glass-box p-4 rounded-2xl border border-slate-800">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Total Withdrawn (Approved)</span>
+            <div id="admin-total-paid" class="text-2xl font-black text-emerald-400 mt-1">₱0.00</div>
+          </div>
+          <div class="glass-box p-4 rounded-2xl border border-slate-800">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Pending Requests</span>
+            <div id="admin-pending-count" class="text-2xl font-black text-amber-400 mt-1">0</div>
+          </div>
+          <div class="glass-box p-4 rounded-2xl border border-slate-800">
+            <span class="text-xs text-slate-400 uppercase font-semibold">Approved Transactions</span>
+            <div id="admin-approved-count" class="text-2xl font-black text-blue-400 mt-1">0</div>
+          </div>
+        </div>
+
+        <!-- Full Detailed Withdrawal Ledger -->
+        <div class="glass-box p-5 rounded-3xl shadow-xl">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-amber-400"></i> Full Withdrawal Request Details & Management
+          </h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="uppercase bg-slate-900 text-slate-400 border-b border-slate-800 text-[11px]">
+                <tr>
+                  <th class="py-3 px-3">Date & Time</th>
+                  <th class="py-3 px-3">Worker Name</th>
+                  <th class="py-3 px-3">Amount (PHP / USD)</th>
+                  <th class="py-3 px-3">Method</th>
+                  <th class="py-3 px-3">GCash No. / Gmail</th>
+                  <th class="py-3 px-3">Status</th>
+                  <th class="py-3 px-3 text-right">Approve / Reject</th>
+                </tr>
+              </thead>
+              <tbody id="admin-withdrawal-tbody" class="divide-y divide-slate-800">
+                <!-- Dynamically rendered in app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- NAVIGATION BAR -->
+  <nav class="fixed bottom-0 left-0 right-0 glass-box border-t border-slate-800 px-2 py-2 flex justify-around items-center z-40 md:relative md:border-0 md:bg-transparent md:mb-2">
+    <button onclick="switchTab('youtube-tab')" class="nav-btn active flex flex-col items-center text-amber-400 p-2 text-[10px] font-bold transition" data-target="youtube-tab">
+      <i class="fa-brands fa-youtube text-lg mb-1"></i>
+      <span>Cinema</span>
+    </button>
+    <button onclick="switchTab('office-tab')" class="nav-btn flex flex-col items-center text-slate-400 p-2 text-[10px] font-bold transition" data-target="office-tab">
+      <i class="fa-solid fa-briefcase text-lg mb-1"></i>
+      <span>Office</span>
+    </button>
+    <button onclick="switchTab('chat-tab')" class="nav-btn flex flex-col items-center text-slate-400 p-2 text-[10px] font-bold transition" data-target="chat-tab">
+      <i class="fa-solid fa-comments text-lg mb-1"></i>
+      <span>Chat</span>
+    </button>
+    <button onclick="switchTab('leaderboard-tab')" class="nav-btn flex flex-col items-center text-slate-400 p-2 text-[10px] font-bold transition" data-target="leaderboard-tab">
+      <i class="fa-solid fa-trophy text-lg mb-1"></i>
+      <span>Rank</span>
+    </button>
+    <button onclick="switchTab('wallet-tab')" class="nav-btn flex flex-col items-center text-slate-400 p-2 text-[10px] font-bold transition" data-target="wallet-tab">
+      <i class="fa-solid fa-wallet text-lg mb-1"></i>
+      <span>Wallet</span>
+    </button>
+    <button onclick="switchTab('admin-tab')" class="nav-btn flex flex-col items-center text-slate-400 p-2 text-[10px] font-bold transition" data-target="admin-tab">
+      <i class="fa-solid fa-user-shield text-lg mb-1"></i>
+      <span>Admin</span>
+    </button>
+  </nav>
+
+  <!-- Dynamic Toast Container -->
+  <div id="toast-container" class="fixed top-16 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- APPLICATION LOGIC -->
+  <script src="app.js"></script>
+</body>
+</html>
